@@ -1,7 +1,7 @@
 const { DataTypes } = require("sequelize");
-const { getSequelize } =  require('../../shared/config/db');
+const { sequelize } = require('../../config/database');
 
-const defineUser = (sequelize) => {
+const defineUser = () => {
     return sequelize.define(
         "users",
         {
@@ -33,11 +33,12 @@ const defineUser = (sequelize) => {
             active: {
                 type: DataTypes.BOOLEAN,
                 allowNull: true,
+                defaultValue: true
             },
             flg_deleted: {
                 type: DataTypes.BOOLEAN,
                 allowNull: true,
-                defaultValue: 1
+                defaultValue: false
             },
             deleted_at: {
                 type: DataTypes.DATE,
@@ -60,15 +61,15 @@ const defineUser = (sequelize) => {
             timestamps: true,
             createdAt: "created_at",
             updatedAt: "updated_at",
+            tableName: "users"
         }
     );
 };
 
 // Función que siempre devuelve el modelo con la conexión actual
 const User = () => {
-    const sequelize = getSequelize();
     if (!sequelize.models.users) {
-        defineUser(sequelize);
+        defineUser();
     }
     return sequelize.models.users;
 };

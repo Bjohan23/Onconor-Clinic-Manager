@@ -4,7 +4,7 @@ require("dotenv").config();
 let currentSequelize;
 
 function createSequelizeInstance(dbName) {
-  return new Sequelize(dbName, process.env.USERDB, process.env.PASSWORD, {
+  return new Sequelize(dbName, process.env.DB_USER, process.env.DB_PASSWORD, {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: "mysql",
@@ -27,7 +27,7 @@ function createSequelizeInstance(dbName) {
   });
 }
 
-const masterSequelize = createSequelizeInstance(process.env.MASTER_DB);
+const masterSequelize = createSequelizeInstance(process.env.DB_NAME);
 currentSequelize = masterSequelize;
 
 function setCurrentSequelize(sequelize) {

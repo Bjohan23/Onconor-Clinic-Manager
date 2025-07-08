@@ -14,7 +14,7 @@ if (env === 'production') {
 } else if (env === 'qas') {
     envPath = path.resolve(__dirname, '.env.development');
 } else if (env === 'development') {
-    envPath = path.resolve(__dirname, '.env.development');
+    envPath = path.resolve(__dirname, '.env');
 } else {
     envPath = path.resolve(__dirname, '.env');
 }
@@ -24,7 +24,7 @@ console.log(`Loading environment file: ${envPath}`);
 dotenv.config({ path: envPath });
 
 // Importar configuración de base de datos
-const { testConnection, syncDatabase } = require('./config/config');
+const { testConnection, syncDatabase } = require('./config/database');
 
 // Crear la instancia de Express
 const app = express();
@@ -67,10 +67,34 @@ console.log('Server URL:', process.env.SERVER_URL);
 // Puerto en el que escuchará el servidor
 const PORT = process.env.PORT || 3000;
 
-// Iniciar el servidor
-app.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
-    console.log(`Environment: ${env}`);
-});
+// Función para inicializar la base de datos y el servidor
+async function initializeApp() {
+    try {
+        // Probar conexión a la base de datos
+        const isConnected = await testConnection();
+        
+        if (!isConnected) {
+            console.error('❌ No se pudo establecer conexión con la base de datos');
+            process.exit(1);
+        }
+        
+        // Sincronizar la base de datos
+        await syncDatabase();
+        
+        // Iniciar el servidor solo si la BD está lista
+        app.listen(PORT, () => {
+            console.log(`🚀 Server listening on port ${PORT}`);
+            console.log(`🌍 Environment: ${env}`);
+            console.log(`🔗 API URL: http://localhost:${PORT}`);
+        });
+        
+    } catch (error) {
+        console.error('❌ Error al inicializar la aplicación:', error.message);
+        process.exit(1);
+    }
+}
+
+// Inicializar la aplicación
+initializeApp();
 
 module.exports = app;
