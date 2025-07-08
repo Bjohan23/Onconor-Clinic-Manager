@@ -1,0 +1,341 @@
+# Onconor Clinic Manager - Global .gitignore
+
+# ==============================================
+# GENERAL
+# ==============================================
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# ==============================================
+# NODE.JS (BACKEND & FRONTEND)
+# ==============================================
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+.nyc_output
+
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variable files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# ==============================================
+# BACKEND SPECIFIC
+# ==============================================
+
+# Express.js
+backend/logs/
+backend/tmp/
+backend/temp/
+
+# Sequelize
+backend/migrations/*.js
+!backend/migrations/*-skeleton.js
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploaded files
+backend/uploads/
+backend/public/uploads/
+
+# SSL certificates
+backend/ssl/
+*.pem
+*.crt
+*.key
+
+# PM2
+.pm2/
+
+# ==============================================
+# FRONTEND SPECIFIC (REACT)
+# ==============================================
+
+# Build outputs
+frontend/build/
+frontend/dist/
+frontend/out/
+
+# React specific
+frontend/.cache/
+
+# Storybook build outputs
+frontend/storybook-static
+
+# ==============================================
+# TESTING
+# ==============================================
+
+# Jest
+jest-coverage/
+coverage/
+*.lcov
+
+# Cypress
+frontend/cypress/videos/
+frontend/cypress/screenshots/
+backend/cypress/videos/
+backend/cypress/screenshots/
+
+# ==============================================
+# DEVELOPMENT TOOLS
+# ==============================================
+
+# Webpack
+.webpack/
+
+# Parcel
+.cache/
+.parcel-cache/
+
+# Vite
+frontend/dist-ssr/
+frontend/*.local
+
+# Next.js (if used instead of CRA)
+frontend/.next/
+frontend/next-env.d.ts
+
+# SvelteKit (if used)
+frontend/.svelte-kit/
+
+# ==============================================
+# LOGS
+# ==============================================
+
+# Log files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# ==============================================
+# SECURITY & SENSITIVE DATA
+# ==============================================
+
+# API keys and secrets
+.secret
+secrets/
+*.secret
+
+# JWT keys
+jwt-*.key
+
+# SSL certificates
+ssl/
+certificates/
+
+# Database dumps
+*.sql
+*.dump
+
+# Backup files
+*.backup
+*.bak
+
+# ==============================================
+# DEPLOYMENT
+# ==============================================
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Kubernetes
+k8s-secrets/
+
+# CI/CD
+.github/workflows/secrets/
+
+# ==============================================
+# DOCUMENTATION
+# ==============================================
+
+# Auto-generated docs (keep manual docs)
+docs/auto-generated/
+api-docs/generated/
+
+# ==============================================
+# TEMPORARY & CACHE FILES
+# ==============================================
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Cache directories
+.cache/
+.eslintcache
+.stylelintcache
+
+# ==============================================
+# PACKAGE MANAGERS
+# ==============================================
+
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# pnpm
+.pnpm-store/
+
+# ==============================================
+# MOBILE (if React Native is added later)
+# ==============================================
+
+# React Native
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# ==============================================
+# ANALYTICS & MONITORING
+# ==============================================
+
+# Bundle analyzer
+bundle-analyzer-report.html
+stats.json
+
+# Lighthouse CI
+.lighthouseci/
+
+# ==============================================
+# CUSTOM PROJECT FILES
+# ==============================================
+
+# Design files
+design/
+*.sketch
+*.fig
+*.xd
+
+# Documentation drafts
+docs/drafts/
+
+# Personal notes
+notes.md
+TODO.md
+PERSONAL-NOTES.md
+
+# Development database
+dev.db
+development.db
+
+# Test data
+test-data/
+mock-data/
+
+# Screenshots and demos
+screenshots/
+demos/
+
+# Backup configurations
+config.backup.*
+settings.backup.*
+
+# ==============================================
+# END OF .gitignore
+# ==============================================
