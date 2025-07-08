@@ -1,7 +1,7 @@
 // services/authService.js
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-//const User = require("../models/user"); 
+const User = require("../../users/models/user"); 
 const {getSequelize} = require('../../shared/config/db');
 
 // Función para generar un token JWT

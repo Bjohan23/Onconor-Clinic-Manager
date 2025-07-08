@@ -2,6 +2,9 @@ const path = require('path');
 const dotenv = require('dotenv');
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
 
 // Determinar el entorno y cargar el archivo .env apropiado
 const env = process.env.NODE_ENV || 'development'; 
@@ -19,6 +22,9 @@ if (env === 'production') {
 // Cargar las variables de entorno
 console.log(`Loading environment file: ${envPath}`);
 dotenv.config({ path: envPath });
+
+// Importar configuración de base de datos
+const { testConnection, syncDatabase } = require('./config/config');
 
 // Crear la instancia de Express
 const app = express();

@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const { getSequelize } =  require('../../../shared/config/db');
+const { getSequelize } =  require('../../shared/config/db');
 
 const defineUser = (sequelize) => {
     return sequelize.define(

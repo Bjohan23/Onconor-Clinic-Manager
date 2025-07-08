@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router()
 
 const authRoutes = require('../auth/routes/authRoutes')
-const userRoutes = require('../configuration/users/routes/userRoutes')
+const userRoutes = require('../users/routes/userRoutes')
 
 const authMiddleware = require('../shared/middlewares/authMiddleware')
 
@@ -15,9 +15,7 @@ router.use(authMiddleware)
 
 // Rutas protegidas (requieren autenticación)
 
-//Dashboard
-router.use('/dashboard', require('../dashboard/routes/dashboardRoutes'))
 
-router.use('/users', userRoutes)
+// router.use('/users', userRoutes)
 
 module.exports = router
