@@ -15,6 +15,9 @@ router.use(authMiddleware)
 
 // Rutas protegidas (requieren autenticación)
 
+router.use('/medical-records', require('../medical/routes/medicalRecordRoutes'));
+router.use('/invoices', require('../medical/routes/invoiceRoutes'));
+router.use('/treatments', require('../medical/routes/treatmentRoutes'));
 
 // router.use('/users', userRoutes)
 
