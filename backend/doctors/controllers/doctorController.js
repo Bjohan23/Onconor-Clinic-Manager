@@ -15,6 +15,12 @@ class DoctorController {
                 return apiResponse.conflict(res, 'Ya existe un médico con esta licencia médica');
             }
 
+            // convertir a entero si es necesario
+            doctorData.specialtyId = parseInt(doctorData.specialtyId);
+            if (isNaN(doctorData.specialtyId)) {
+                return apiResponse.badRequest(res, 'ID de especialidad inválido');
+            }
+
             // Verificar que la especialidad existe
             const specialty = await specialtyRepository.findById(doctorData.specialtyId);
             if (!specialty) {
@@ -121,6 +127,11 @@ class DoctorController {
 
             // Verificar especialidad si se está actualizando
             if (updateData.specialtyId) {
+                // convertir a entero si es necesario
+                updateData.specialtyId = parseInt(updateData.specialtyId);
+                if (isNaN(updateData.specialtyId)) {
+                    return apiResponse.badRequest(res, 'ID de especialidad inválido');
+                }
                 const specialty = await specialtyRepository.findById(updateData.specialtyId);
                 if (!specialty) {
                     return apiResponse.notFound(res, 'La especialidad especificada no existe');

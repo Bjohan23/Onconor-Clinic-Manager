@@ -1,43 +1,113 @@
 import { useTheme } from '../contexts/ThemeContext'
+import { getSpinnerConfig, spinnerUtils } from '../theme/theme'
 
-export const LoadingSpinner = ({ size = 'md', text = 'Cargando...' }) => {
-  const { colors } = useTheme()
+export const LoadingSpinner = ({ 
+  size = 'md', 
+  variant = 'primary', 
+  text = 'Cargando...',
+  context = null,
+  center = false,
+  overlay = false,
+  className = '',
+  ...props 
+}) => {
+  const { isDarkMode } = useTheme()
+  const theme = isDarkMode ? 'dark' : 'light'
   
-  const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-8 w-8',
-    lg: 'h-12 w-12',
-    xl: 'h-16 w-16'
-  }
-
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen" 
-         style={{ backgroundColor: colors.background.primary }}>
-      <div className="flex flex-col items-center space-y-4">
-        <div
-          className={`${sizeClasses[size]} animate-spin rounded-full border-4 border-gray-300`}
-          style={{
-            borderTopColor: colors.primary[500],
-            borderRightColor: colors.primary[500]
-          }}
-        ></div>
-        <p className="text-sm font-medium" style={{ color: colors.text.secondary }}>
-          {text}
-        </p>
+  // Obtener configuración basada en contexto médico si se especifica
+  const config = getSpinnerConfig(size, variant, theme, context)
+  
+  // Mensaje por defecto basado en contexto médico
+  const defaultMessage = context && config.message || text
+  
+  const spinnerClasses = `${config.className} ${className}`
+  
+  const spinnerElement = (
+    <div
+      className={spinnerClasses}
+      style={config.style}
+      aria-label={defaultMessage}
+      role="status"
+      {...props}
+    >
+      <span className="sr-only">{defaultMessage}</span>
+    </div>
+  )
+  
+  // Overlay con fondo
+  if (overlay) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl flex items-center gap-4">
+          {spinnerElement}
+          {defaultMessage && (
+            <span className="text-gray-700 dark:text-gray-300">
+              {defaultMessage}
+            </span>
+          )}
+        </div>
       </div>
+    )
+  }
+  
+  // Centrado con mensaje
+  if (center) {
+    return (
+      <div className={`flex items-center justify-center ${defaultMessage ? 'flex-col gap-2' : ''} min-h-64`}>
+        {spinnerElement}
+        {defaultMessage && (
+          <span className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+            {defaultMessage}
+          </span>
+        )}
+      </div>
+    )
+  }
+  
+  return spinnerElement
+}
+
+export const ButtonSpinner = ({ size = 'sm', variant = 'white' }) => {
+  const { isDarkMode } = useTheme()
+  
+  const fullClass = spinnerUtils.getFullClass(size, variant, isDarkMode)
+  
+  return (
+    <div className={fullClass} aria-hidden="true">
+      <span className="sr-only">Cargando...</span>
     </div>
   )
 }
 
-export const ButtonSpinner = ({ size = 'sm' }) => {
-  const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-5 w-5',
-  }
+// Spinner específicos para contextos médicos
+export const PatientSpinner = (props) => (
+  <LoadingSpinner context="patient" {...props} />
+)
 
-  return (
-    <div
-      className={`${sizeClasses[size]} animate-spin rounded-full border-2 border-white border-t-transparent`}
-    ></div>
-  )
-}
+export const AppointmentSpinner = (props) => (
+  <LoadingSpinner context="appointment" {...props} />
+)
+
+export const TreatmentSpinner = (props) => (
+  <LoadingSpinner context="treatment" {...props} />
+)
+
+export const CriticalSpinner = (props) => (
+  <LoadingSpinner context="critical" {...props} />
+)
+
+export const ReportSpinner = (props) => (
+  <LoadingSpinner context="report" {...props} />
+)
+
+export const LabSpinner = (props) => (
+  <LoadingSpinner context="lab" {...props} />
+)
+
+export const PrescriptionSpinner = (props) => (
+  <LoadingSpinner context="prescription" {...props} />
+)
+
+export const BillingSpinner = (props) => (
+  <LoadingSpinner context="billing" {...props} />
+)

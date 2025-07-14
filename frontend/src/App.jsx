@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider } from './shared/contexts/ThemeContext'
 import { AuthProvider } from './shared/contexts/AuthContext'
+import { ToastProvider } from './shared/components/ui/Toast'
 import { AuthGuard } from './shared/guards/AuthGuard'
 import { GuestGuard } from './shared/guards/AuthGuard'
 import { LoginPage } from './auth/pages/LoginPage'
@@ -14,44 +15,52 @@ const Dashboard = lazy(() => import('./dashboard/pages/DashboardPage'))
 const Patients = lazy(() => import('./patients/pages/PatientsPage'))
 const CreatePatient = lazy(() => import('./patients/pages/CreatePatientPage'))
 const EditPatient = lazy(() => import('./patients/pages/EditPatientPage'))
+const Doctors = lazy(() => import('./doctors/pages/DoctorsPage'))
+const CreateDoctor = lazy(() => import('./doctors/pages/CreateDoctorPage'))
+const EditDoctor = lazy(() => import('./doctors/pages/EditDoctorPage'))
 
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router>
-          <Routes>
-            {/* Rutas públicas */}
-            <Route 
-              path="/login" 
-              element={
-                <GuestGuard>
-                  <LoginPage />
-                </GuestGuard>
-              } 
-            />
-            
-            {/* Rutas protegidas */}
-            <Route 
-              path="/*" 
-              element={
-                <AuthGuard>
-                  <DashboardLayout>
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <Routes>
-                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/patients" element={<Patients />} />
-                        <Route path="/patients/create" element={<CreatePatient />} />
-                        <Route path="/patients/edit/:id" element={<EditPatient />} />
-                      </Routes>
-                    </Suspense>
-                  </DashboardLayout>
-                </AuthGuard>
-              } 
-            />
-          </Routes>
-        </Router>
+        <ToastProvider>
+          <Router>
+            <Routes>
+              {/* Rutas públicas */}
+              <Route 
+                path="/login" 
+                element={
+                  <GuestGuard>
+                    <LoginPage />
+                  </GuestGuard>
+                } 
+              />
+              
+              {/* Rutas protegidas */}
+              <Route 
+                path="/*" 
+                element={
+                  <AuthGuard>
+                    <DashboardLayout>
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <Routes>
+                          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                          <Route path="/dashboard" element={<Dashboard />} />
+                          <Route path="/patients" element={<Patients />} />
+                          <Route path="/patients/create" element={<CreatePatient />} />
+                          <Route path="/patients/edit/:id" element={<EditPatient />} />
+                          <Route path="/doctors" element={<Doctors />} />
+                          <Route path="/doctors/create" element={<CreateDoctor />} />
+                          <Route path="/doctors/edit/:id" element={<EditDoctor />} />
+                        </Routes>
+                      </Suspense>
+                    </DashboardLayout>
+                  </AuthGuard>
+                } 
+              />
+            </Routes>
+          </Router>
+        </ToastProvider>
       </AuthProvider>
     </ThemeProvider>
   )

@@ -3,13 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useTheme } from '../../shared/contexts/ThemeContext'
 import { useAuth } from '../../shared/contexts/AuthContext'
 import { useToast } from '../../shared/components/ui/Toast'
-import { patientService } from '../services/patientService'
+import { doctorService } from '../services/doctorService'
 import { Button } from '../../shared/components/ui/Button'
 import { Input, TextArea } from '../../shared/components/ui/Input'
 import { Card, CardHeader, CardTitle, CardContent } from '../../shared/components/ui/Card'
-import { PatientSpinner } from '../../shared/components/LoadingSpinner'
+import { LoadingSpinner } from '../../shared/components/LoadingSpinner'
 
-const EditPatientPage = () => {
+const EditDoctorPage = () => {
   const { colors } = useTheme()
   const navigate = useNavigate()
   const { id } = useParams()
@@ -17,71 +17,70 @@ const EditPatientPage = () => {
   const toast = useToast()
   
   const [loading, setLoading] = useState(false)
-  const [loadingPatient, setLoadingPatient] = useState(true)
+  const [loadingDoctor, setLoadingDoctor] = useState(true)
   const [errors, setErrors] = useState({})
-  const [patient, setPatient] = useState(null)
+  const [doctor, setDoctor] = useState(null)
   const [formData, setFormData] = useState({
     userId: user?.id || 1,
-    dni: '',
+    medicalCode: '',
     firstName: '',
     lastName: '',
-    dateOfBirth: '',
-    gender: '',
+    email: '',
     phone: '',
     address: '',
-    emergencyContact: '',
-    email: '',
-    bloodType: '',
-    allergies: '',
-    medicalNotes: ''
+    specialtyId: '',
+    licenseNumber: '',
+    university: '',
+    graduationYear: '',
+    experience: '',
+    consultationFee: '',
+    bio: '',
+    status: 'active'
   })
 
-  // Cargar datos del paciente al montar
+  // Cargar datos del doctor al montar
   useEffect(() => {
     if (id) {
-      fetchPatient()
+      fetchDoctor()
     }
   }, [id])
 
-  const fetchPatient = async () => {
+  const fetchDoctor = async () => {
     try {
-      setLoadingPatient(true)
-      const response = await patientService.getPatientById(id)
+      setLoadingDoctor(true)
+      const response = await doctorService.getDoctorById(id)
       
       if (response.success) {
-        const patientData = response.data
-        setPatient(patientData)
-        
-        // Formatear fecha para input date
-        const formattedDate = patientData.dateOfBirth 
-          ? new Date(patientData.dateOfBirth).toISOString().split('T')[0]
-          : ''
+        const doctorData = response.data
+        setDoctor(doctorData)
         
         setFormData({
-          userId: patientData.userId || user?.id || 1,
-          dni: patientData.dni || '',
-          firstName: patientData.firstName || '',
-          lastName: patientData.lastName || '',
-          dateOfBirth: formattedDate,
-          gender: patientData.gender || '',
-          phone: patientData.phone || '',
-          address: patientData.address || '',
-          emergencyContact: patientData.emergencyContact || '',
-          email: patientData.email || '',
-          bloodType: patientData.bloodType || '',
-          allergies: patientData.allergies || '',
-          medicalNotes: patientData.medicalNotes || ''
+          userId: doctorData.userId || user?.id || 1,
+          medicalCode: doctorData.medicalCode || '',
+          firstName: doctorData.firstName || '',
+          lastName: doctorData.lastName || '',
+          email: doctorData.email || '',
+          phone: doctorData.phone || '',
+          address: doctorData.address || '',
+          specialtyId: doctorData.specialtyId || '',
+          licenseNumber: doctorData.licenseNumber || '',
+          university: doctorData.university || '',
+          graduationYear: doctorData.graduationYear || '',
+          experience: doctorData.experience || '',
+          consultationFee: doctorData.consultationFee || '',
+          bio: doctorData.bio || '',
+          status: doctorData.status || 'active'
         })
       } else {
-        toast.error(response.message || 'Error al cargar el paciente')
-        navigate('/patients')
+        toast.error(response.message || 'Error al cargar el doctor')
+        navigate('/doctors')
       }
     } catch (err) {
-      console.error('Error fetching patient:', err)
-      toast.error('Error de conexión al cargar el paciente')
-      navigate('/patients')
+      console.error('Error fetching doctor:', err)
+      toast.error('Error de conexión al cargar el doctor')
+      navigate('/doctors')
     } finally {
-      setLoadingPatient(false)
+      setLoadingDoctor(false)
     }
   }
 
@@ -105,12 +104,9 @@ const EditPatientPage = () => {
     const newErrors = {}
 
     // Validaciones obligatorias
-    if (!formData.dni.trim()) {
-      newErrors.dni = 'El DNI es obligatorio'
-    } else if (!/^\d{8}$/.test(formData.dni.trim())) {
-      newErrors.dni = 'El DNI debe tener exactamente 8 dígitos'
+    if (!formData.medicalCode.trim()) {
+      newErrors.medicalCode = 'El código médico es obligatorio'
     }
-
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'Los nombres son obligatorios'
     }
@@ -119,19 +115,10 @@ const EditPatientPage = () => {
       newErrors.lastName = 'Los apellidos son obligatorios'
     }
 
-    if (!formData.dateOfBirth) {
-      newErrors.dateOfBirth = 'La fecha de nacimiento es obligatoria'
-    } else {
-      const birthDate = new Date(formData.dateOfBirth)
-      const today = new Date()
-      const age = today.getFullYear() - birthDate.getFullYear()
-      if (age < 0 || age > 120) {
-        newErrors.dateOfBirth = 'Fecha de nacimiento inválida'
-      }
-    }
-
-    if (!formData.gender) {
-      newErrors.gender = 'El género es obligatorio'
+    if (!formData.email.trim()) {
+      newErrors.email = 'El email es obligatorio'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Formato de email inválido'
     }
 
     if (!formData.phone.trim()) {
@@ -140,17 +127,38 @@ const EditPatientPage = () => {
       newErrors.phone = 'Formato de teléfono inválido (ejemplo: +51987654321 o 987654321)'
     }
 
-    if (!formData.address.trim()) {
-      newErrors.address = 'La dirección es obligatoria'
+    if (!formData.specialtyId) {
+      newErrors.specialtyId = 'La especialidad es obligatoria'
     }
 
-    if (!formData.emergencyContact.trim()) {
-      newErrors.emergencyContact = 'El contacto de emergencia es obligatorio'
+    if (!formData.licenseNumber.trim()) {
+      newErrors.licenseNumber = 'El número de colegiatura es obligatorio'
     }
 
-    // Validaciones opcionales
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Formato de email inválido'
+    if (!formData.university.trim()) {
+      newErrors.university = 'La universidad es obligatoria'
+    }
+
+    if (!formData.graduationYear) {
+      newErrors.graduationYear = 'El año de graduación es obligatorio'
+    } else {
+      const year = parseInt(formData.graduationYear)
+      const currentYear = new Date().getFullYear()
+      if (year < 1950 || year > currentYear) {
+        newErrors.graduationYear = 'Año de graduación inválido'
+      }
+    }
+
+    if (!formData.experience) {
+      newErrors.experience = 'Los años de experiencia son obligatorios'
+    } else if (parseInt(formData.experience) < 0 || parseInt(formData.experience) > 50) {
+      newErrors.experience = 'Años de experiencia inválidos (0-50)'
+    }
+
+    if (!formData.consultationFee) {
+      newErrors.consultationFee = 'La tarifa de consulta es obligatoria'
+    } else if (parseFloat(formData.consultationFee) <= 0) {
+      newErrors.consultationFee = 'La tarifa debe ser mayor a 0'
     }
 
     setErrors(newErrors)
@@ -167,47 +175,39 @@ const EditPatientPage = () => {
     setLoading(true)
     try {
       // Preparar datos para enviar
-      const patientData = {
+      const doctorData = {
         ...formData,
-        dni: formData.dni.trim(),
+        medicalCode: formData.medicalCode.trim().toUpperCase(),
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
         phone: formData.phone.replace(/\s/g, ''),
         address: formData.address.trim(),
-        emergencyContact: formData.emergencyContact.trim(),
+        licenseNumber: formData.licenseNumber.trim(),
+        university: formData.university.trim(),
+        graduationYear: parseInt(formData.graduationYear),
+        experience: parseInt(formData.experience),
+        consultationFee: parseFloat(formData.consultationFee),
+        bio: formData.bio.trim()
       }
 
-      // Agregar campos opcionales solo si tienen valor
-      if (formData.email.trim()) {
-        patientData.email = formData.email.trim()
-      }
-      if (formData.bloodType) {
-        patientData.bloodType = formData.bloodType
-      }
-      if (formData.allergies.trim()) {
-        patientData.allergies = formData.allergies.trim()
-      }
-      if (formData.medicalNotes.trim()) {
-        patientData.medicalNotes = formData.medicalNotes.trim()
-      }
-
-      const response = await patientService.updatePatient(id, patientData)
+      const response = await doctorService.updateDoctor(id, doctorData)
       
       if (response.success) {
-        toast.success('Paciente actualizado exitosamente')
-        navigate('/patients')
+        toast.success('Doctor actualizado exitosamente')
+        navigate('/doctors')
       } else {
         setErrors({ 
-          submit: response.message || 'Error al actualizar el paciente' 
+          submit: response.message || 'Error al actualizar el doctor' 
         })
       }
     } catch (err) {
-      console.error('Error updating patient:', err)
+      console.error('Error updating doctor:', err)
       
       // Manejar errores específicos
       if (err.status === 409) {
         setErrors({ 
-          dni: 'Ya existe otro paciente con este DNI' 
+          medicalCode: 'Ya existe otro doctor con este código médico' 
         })
       } else if (err.status === 400) {
         setErrors({ 
@@ -223,41 +223,28 @@ const EditPatientPage = () => {
     }
   }
 
-  const calculateAge = (birthDate) => {
-    if (!birthDate) return ''
-    const today = new Date()
-    const birth = new Date(birthDate)
-    const age = today.getFullYear() - birth.getFullYear()
-    const monthDiff = today.getMonth() - birth.getMonth()
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      return age - 1
-    }
-    return age
-  }
-
-  if (loadingPatient) {
+  if (loadingDoctor) {
     return (
       <div className="flex justify-center items-center min-h-96">
-        <PatientSpinner center />
+        <LoadingSpinner size="lg" text="Cargando doctor..." center />
       </div>
     )
   }
 
-  if (!patient) {
+  if (!doctor) {
     return (
       <div className="text-center py-12">
         <h2 className="text-xl font-semibold" style={{ color: colors.text.primary }}>
-          Paciente no encontrado
+          Doctor no encontrado
         </h2>
         <p className="text-sm mt-2" style={{ color: colors.text.secondary }}>
-          El paciente solicitado no existe o no tienes permisos para editarlo.
+          El doctor solicitado no existe o no tienes permisos para editarlo.
         </p>
         <Button
-          onClick={() => navigate('/patients')}
+          onClick={() => navigate('/doctors')}
           className="mt-4"
         >
-          Volver a Pacientes
+          Volver a Doctores
         </Button>
       </div>
     )
@@ -269,22 +256,22 @@ const EditPatientPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: colors.text.primary }}>
-            Editar Paciente
+            Editar Doctor
           </h1>
           <p className="text-sm" style={{ color: colors.text.secondary }}>
-            Modifica la información de {patient.firstName} {patient.lastName}
+            Modifica la información de Dr. {doctor.firstName} {doctor.lastName}
           </p>
         </div>
         <Button
           variant="ghost"
-          onClick={() => navigate('/patients')}
+          onClick={() => navigate('/doctors')}
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m0 7h18" />
             </svg>
           }
         >
-          Volver a Pacientes
+          Volver a Doctores
         </Button>
       </div>
 
@@ -298,7 +285,7 @@ const EditPatientPage = () => {
               </svg>
               <div>
                 <h3 className="font-medium" style={{ color: colors.error[700] }}>
-                  Error al actualizar paciente
+                  Error al actualizar doctor
                 </h3>
                 <p className="text-sm" style={{ color: colors.error[600] }}>
                   {errors.submit}
@@ -316,27 +303,28 @@ const EditPatientPage = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
-                label="DNI"
-                name="dni"
+                label="Código Médico"
+                name="medicalCode"
                 type="text"
                 required
-                maxLength="8"
-                placeholder="12345678"
-                value={formData.dni}
+                maxLength="10"
+                placeholder="DOC001"
+                value={formData.medicalCode}
                 onChange={handleChange}
-                error={errors.dni}
-                helperText="Documento Nacional de Identidad (8 dígitos)"
+                error={errors.medicalCode}
+                helperText="Código único del doctor (6-10 caracteres alfanuméricos)"
               />
 
               <Input
                 label="Email"
                 name="email"
                 type="email"
-                placeholder="paciente@ejemplo.com"
+                required
+                placeholder="doctor@clinica.com"
                 value={formData.email}
                 onChange={handleChange}
                 error={errors.email}
-                helperText="Correo electrónico (opcional)"
+                helperText="Correo electrónico profesional"
               />
 
               <Input
@@ -362,55 +350,6 @@ const EditPatientPage = () => {
               />
 
               <Input
-                label="Fecha de Nacimiento"
-                name="dateOfBirth"
-                type="date"
-                required
-                value={formData.dateOfBirth}
-                onChange={handleChange}
-                error={errors.dateOfBirth}
-                helperText={formData.dateOfBirth ? `Edad: ${calculateAge(formData.dateOfBirth)} años` : ''}
-              />
-
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
-                  Género <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="gender"
-                  required
-                  value={formData.gender}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2"
-                  style={{
-                    backgroundColor: colors.background.primary,
-                    borderColor: errors.gender ? colors.error[300] : colors.border.medium,
-                    color: colors.text.primary,
-                    focusRingColor: colors.primary[400]
-                  }}
-                >
-                  <option value="">Seleccionar género</option>
-                  <option value="M">Masculino</option>
-                  <option value="F">Femenino</option>
-                </select>
-                {errors.gender && (
-                  <p className="text-xs mt-1" style={{ color: colors.error[600] }}>
-                    {errors.gender}
-                  </p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Información de Contacto */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Información de Contacto</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Input
                 label="Teléfono"
                 name="phone"
                 type="tel"
@@ -422,49 +361,14 @@ const EditPatientPage = () => {
                 helperText="Incluye código de país para Perú (+51)"
               />
 
-              <Input
-                label="Contacto de Emergencia"
-                name="emergencyContact"
-                type="text"
-                required
-                placeholder="María García - 999888777"
-                value={formData.emergencyContact}
-                onChange={handleChange}
-                error={errors.emergencyContact}
-                helperText="Nombre y teléfono de contacto de emergencia"
-              />
-
-              <div className="md:col-span-2">
-                <TextArea
-                  label="Dirección"
-                  name="address"
-                  required
-                  rows={3}
-                  placeholder="Av. Principal 123, Distrito, Lima"
-                  value={formData.address}
-                  onChange={handleChange}
-                  error={errors.address}
-                  helperText="Dirección completa de residencia"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Información Médica */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Información Médica (Opcional)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
-                  Tipo de Sangre
+                  Estado <span className="text-red-500">*</span>
                 </label>
                 <select
-                  name="bloodType"
-                  value={formData.bloodType}
+                  name="status"
+                  required
+                  value={formData.status}
                   onChange={handleChange}
                   className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2"
                   style={{
@@ -474,37 +378,144 @@ const EditPatientPage = () => {
                     focusRingColor: colors.primary[400]
                   }}
                 >
-                  <option value="">Seleccionar tipo de sangre</option>
-                  <option value="A+">A+</option>
-                  <option value="A-">A-</option>
-                  <option value="B+">B+</option>
-                  <option value="B-">B-</option>
-                  <option value="AB+">AB+</option>
-                  <option value="AB-">AB-</option>
-                  <option value="O+">O+</option>
-                  <option value="O-">O-</option>
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
+                  <option value="busy">Ocupado</option>
+                  <option value="available">Disponible</option>
                 </select>
               </div>
 
-              <TextArea
-                label="Alergias Conocidas"
-                name="allergies"
-                rows={2}
-                placeholder="Penicilina, mariscos, etc."
-                value={formData.allergies}
+              <div className="md:col-span-2">
+                <TextArea
+                  label="Dirección"
+                  name="address"
+                  rows={2}
+                  placeholder="Av. Principal 123, Distrito, Lima"
+                  value={formData.address}
+                  onChange={handleChange}
+                  error={errors.address}
+                  helperText="Dirección de residencia (opcional)"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Información Profesional */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Información Profesional</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
+                  Especialidad <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="specialtyId"
+                  required
+                  value={formData.specialtyId}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: colors.background.primary,
+                    borderColor: errors.specialtyId ? colors.error[300] : colors.border.medium,
+                    color: colors.text.primary,
+                    focusRingColor: colors.primary[400]
+                  }}
+                >
+                  <option value="">Seleccionar especialidad</option>
+                  <option value="1">Cardiología</option>
+                  <option value="2">Neurología</option>
+                  <option value="3">Pediatría</option>
+                  <option value="4">Ginecología</option>
+                  <option value="5">Traumatología</option>
+                  <option value="6">Medicina General</option>
+                  <option value="7">Dermatología</option>
+                  <option value="8">Oftalmología</option>
+                </select>
+                {errors.specialtyId && (
+                  <p className="text-xs mt-1" style={{ color: colors.error[600] }}>
+                    {errors.specialtyId}
+                  </p>
+                )}
+              </div>
+
+              <Input
+                label="Número de Colegiatura"
+                name="licenseNumber"
+                type="text"
+                required
+                placeholder="CMP12345"
+                value={formData.licenseNumber}
                 onChange={handleChange}
-                helperText="Lista de alergias conocidas separadas por comas"
+                error={errors.licenseNumber}
+                helperText="Número de colegio médico"
+              />
+
+              <Input
+                label="Universidad"
+                name="university"
+                type="text"
+                required
+                placeholder="Universidad Nacional Mayor de San Marcos"
+                value={formData.university}
+                onChange={handleChange}
+                error={errors.university}
+                helperText="Universidad donde estudió medicina"
+              />
+
+              <Input
+                label="Año de Graduación"
+                name="graduationYear"
+                type="number"
+                required
+                min="1950"
+                max={new Date().getFullYear()}
+                placeholder="2015"
+                value={formData.graduationYear}
+                onChange={handleChange}
+                error={errors.graduationYear}
+              />
+
+              <Input
+                label="Años de Experiencia"
+                name="experience"
+                type="number"
+                required
+                min="0"
+                max="50"
+                placeholder="5"
+                value={formData.experience}
+                onChange={handleChange}
+                error={errors.experience}
+              />
+
+              <Input
+                label="Tarifa de Consulta (S/.)"
+                name="consultationFee"
+                type="number"
+                required
+                min="0"
+                step="0.01"
+                placeholder="150.00"
+                value={formData.consultationFee}
+                onChange={handleChange}
+                error={errors.consultationFee}
+                helperText="Precio de consulta en soles"
               />
 
               <div className="md:col-span-2">
                 <TextArea
-                  label="Notas Médicas"
-                  name="medicalNotes"
-                  rows={3}
-                  placeholder="Información médica adicional relevante..."
-                  value={formData.medicalNotes}
+                  label="Biografía Profesional"
+                  name="bio"
+                  rows={4}
+                  placeholder="Describe la experiencia y especialización del doctor..."
+                  value={formData.bio}
                   onChange={handleChange}
-                  helperText="Información médica adicional que pueda ser relevante"
+                  error={errors.bio}
+                  helperText="Información adicional sobre el doctor (opcional)"
                 />
               </div>
             </div>
@@ -518,7 +529,7 @@ const EditPatientPage = () => {
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => navigate('/patients')}
+                onClick={() => navigate('/doctors')}
                 disabled={loading}
               >
                 Cancelar
@@ -533,7 +544,7 @@ const EditPatientPage = () => {
                   </svg>
                 }
               >
-                {loading ? 'Actualizando Paciente...' : 'Actualizar Paciente'}
+                {loading ? 'Actualizando Doctor...' : 'Actualizar Doctor'}
               </Button>
             </div>
           </CardContent>
@@ -543,4 +554,4 @@ const EditPatientPage = () => {
   )
 }
 
-export default EditPatientPage
+export default EditDoctorPage
