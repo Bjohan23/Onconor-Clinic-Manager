@@ -477,5 +477,4 @@ const AppointmentDetail = ({
         </div>
     );
 };
-
 export default AppointmentDetail;
