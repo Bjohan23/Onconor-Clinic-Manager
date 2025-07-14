@@ -28,7 +28,7 @@ const sequelize = new Sequelize(
         require: true,
         rejectUnauthorized: false
       } : false,
-      timezone: 'Etc/GMT-5', // Zona horaria de Perú
+      timezone: '-05:00', // Zona horaria de Perú
     },
   }
 );

@@ -39,6 +39,51 @@ const defineDoctor = () => {
                 type: DataTypes.STRING(20),
                 allowNull: true,
             },
+            email: {
+                type: DataTypes.STRING(100),
+                allowNull: true,
+                validate: {
+                    isEmail: true
+                }
+            },
+            address: {
+                type: DataTypes.TEXT,
+                allowNull: true,
+            },
+            medicalCode: {
+                type: DataTypes.STRING(20),
+                allowNull: true,
+                unique: true,
+                field: 'medical_code'
+            },
+            university: {
+                type: DataTypes.STRING(200),
+                allowNull: true,
+            },
+            graduationYear: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                field: 'graduation_year'
+            },
+            experience: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                defaultValue: 0
+            },
+            consultationFee: {
+                type: DataTypes.DECIMAL(10, 2),
+                allowNull: true,
+                field: 'consultation_fee'
+            },
+            bio: {
+                type: DataTypes.TEXT,
+                allowNull: true,
+            },
+            status: {
+                type: DataTypes.ENUM('active', 'inactive', 'busy', 'available'),
+                allowNull: false,
+                defaultValue: 'active'
+            },
             specialtyId: {
                 type: DataTypes.INTEGER,
                 allowNull: false,
@@ -86,6 +131,10 @@ const defineDoctor = () => {
                     fields: ['medical_license']
                 },
                 {
+                    unique: true,
+                    fields: ['medical_code']
+                },
+                {
                     fields: ['user_id']
                 },
                 {
@@ -93,6 +142,12 @@ const defineDoctor = () => {
                 },
                 {
                     fields: ['active']
+                },
+                {
+                    fields: ['status']
+                },
+                {
+                    fields: ['email']
                 }
             ]
         }
