@@ -9,10 +9,18 @@ class DoctorController {
         try {
             const doctorData = req.body;
 
+            // Mapear licenseNumber a medicalLicense para compatibilidad con la base de datos
+            if (doctorData.licenseNumber) {
+                doctorData.medicalLicense = doctorData.licenseNumber;
+                delete doctorData.licenseNumber;
+            }
+
             // Verificar que no existe un médico con la misma licencia médica
-            const existingDoctor = await doctorRepository.findByMedicalLicense(doctorData.medicalLicense);
-            if (existingDoctor) {
-                return apiResponse.conflict(res, 'Ya existe un médico con esta licencia médica');
+            if (doctorData.medicalLicense) {
+                const existingDoctor = await doctorRepository.findByMedicalLicense(doctorData.medicalLicense);
+                if (existingDoctor) {
+                    return apiResponse.conflict(res, 'Ya existe un médico con esta licencia médica');
+                }
             }
 
             // convertir a entero si es necesario
@@ -110,6 +118,12 @@ class DoctorController {
         try {
             const { id } = req.params;
             const updateData = req.body;
+
+            // Mapear licenseNumber a medicalLicense para compatibilidad con la base de datos
+            if (updateData.licenseNumber) {
+                updateData.medicalLicense = updateData.licenseNumber;
+                delete updateData.licenseNumber;
+            }
 
             // Validar que el médico existe
             const existingDoctor = await doctorRepository.findById(id);
