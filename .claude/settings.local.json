@@ -10,7 +10,8 @@
       "Bash(rm:*)",
       "Bash(npm run dev:*)",
       "Bash(pkill:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npx vite:*)"
     ],
     "deny": []
   }

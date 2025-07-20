@@ -7,6 +7,7 @@
 ## 🎯 Problemática
 
 Las clínicas actuales enfrentan desafíos significativos en:
+
 - **Gestión manual de citas** que genera conflictos de horarios
 - **Historiales médicos dispersos** y difíciles de consultar
 - **Falta de coordinación** entre personal médico y administrativo
@@ -35,17 +36,21 @@ Desarrollaremos un **sistema web integral** que permitirá:
 ### 💻 Tecnologías a Implementar
 
 **Frontend**
+
 - React.js para interfaz de usuario responsiva
 - Tailwind CSS para diseño moderno
 
 **Backend**
+
 - Node.js con Express para API RESTful
 - JWT para autenticación segura
 
 **Base de Datos**
+
 - PostgreSQL/MySQL para almacenamiento de datos
 
 **Infraestructura**
+
 - Arquitectura en capas para escalabilidad
 - Despliegue en entornos web productivos
 
@@ -58,9 +63,11 @@ Desarrollaremos un **sistema web integral** que permitirá:
 ## 🎯 Objetivos
 
 ### Objetivo General
+
 Diseñar e implementar un sistema clínico integral que permita gestionar citas médicas, historiales clínicos y procesos administrativos, garantizando eficiencia operativa, seguridad y una atención médica de calidad.
 
 ### Objetivos Específicos
+
 - Crear una interfaz web intuitiva y accesible para todos los usuarios
 - Desarrollar una API RESTful robusta para gestión de reglas de negocio
 - Implementar una base de datos optimizada para información clínica
@@ -87,4 +94,4 @@ Diseñar e implementar un sistema clínico integral que permita gestionar citas 
 
 ---
 
-*Este proyecto representa una solución moderna y escalable para la digitalización de procesos clínicos, mejorando la eficiencia operativa y la calidad de atención médica.*
+_Este proyecto representa una solución moderna y escalable para la digitalización de procesos clínicos, mejorando la eficiencia operativa y la calidad de atención médica._

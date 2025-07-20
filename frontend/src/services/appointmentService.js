@@ -1,38 +1,13 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/v1/api';
+import { apiClient } from '../infrastructure/api/apiClient';
 
 class AppointmentService {
-    
-    // Configurar headers con token
-    getHeaders() {
-        const token = localStorage.getItem('authToken');
-        return {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : '',
-        };
-    }
-
-    // Manejar respuestas de la API
-    async handleResponse(response) {
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: 'Error desconocido' }));
-            throw new Error(errorData.message || `Error ${response.status}`);
-        }
-        return response.json();
-    }
 
     // ========== CRUD BÁSICO ==========
 
     // Crear nueva cita
     async createAppointment(appointmentData) {
         try {
-            const response = await fetch(`${API_BASE_URL}/appointments`, {
-                method: 'POST',
-                headers: this.getHeaders(),
-                body: JSON.stringify(appointmentData),
-            });
-
-            const result = await this.handleResponse(response);
-            return result.data;
+            return await apiClient.post('/appointments', appointmentData);
         } catch (error) {
             console.error('Error creating appointment:', error);
             throw error;
@@ -42,13 +17,7 @@ class AppointmentService {
     // Obtener cita por ID
     async getAppointmentById(id) {
         try {
-            const response = await fetch(`${API_BASE_URL}/appointments/${id}`, {
-                method: 'GET',
-                headers: this.getHeaders(),
-            });
-
-            const result = await this.handleResponse(response);
-            return result.data.appointment;
+            return await apiClient.get(`/appointments/${id}`);
         } catch (error) {
             console.error('Error fetching appointment:', error);
             throw error;
@@ -58,16 +27,19 @@ class AppointmentService {
     // Actualizar cita
     async updateAppointment(id, updateData) {
         try {
-            const response = await fetch(`${API_BASE_URL}/appointments/${id}`, {
-                method: 'PUT',
-                headers: this.getHeaders(),
-                body: JSON.stringify(updateData),
-            });
-
-            const result = await this.handleResponse(response);
-            return result.data.appointment;
+            return await apiClient.put(`/appointments/${id}`, updateData);
         } catch (error) {
             console.error('Error updating appointment:', error);
+            throw error;
+        }
+    }
+
+    // Eliminar cita
+    async deleteAppointment(id) {
+        try {
+            return await apiClient.delete(`/appointments/${id}`);
+        } catch (error) {
+            console.error('Error deleting appointment:', error);
             throw error;
         }
     }
@@ -85,13 +57,7 @@ class AppointmentService {
                 )
             });
 
-            const response = await fetch(`${API_BASE_URL}/appointments?${params}`, {
-                method: 'GET',
-                headers: this.getHeaders(),
-            });
-
-            const result = await this.handleResponse(response);
-            return result.data;
+            return await apiClient.get(`/appointments?${params}`);
         } catch (error) {
             console.error('Error fetching appointments:', error);
             throw error;
@@ -124,13 +90,7 @@ class AppointmentService {
                 )
             );
 
-            const response = await fetch(`${API_BASE_URL}/appointments/patient/${patientId}?${params}`, {
-                method: 'GET',
-                headers: this.getHeaders(),
-            });
-
-            const result = await this.handleResponse(response);
-            return result.data;
+            return await apiClient.get(`/appointments/patient/${patientId}?${params}`);
         } catch (error) {
             console.error('Error fetching patient appointments:', error);
             throw error;
@@ -146,31 +106,59 @@ class AppointmentService {
                 )
             );
 
-            const response = await fetch(`${API_BASE_URL}/appointments/doctor/${doctorId}?${params}`, {
-                method: 'GET',
-                headers: this.getHeaders(),
-            });
-
-            const result = await this.handleResponse(response);
-            return result.data;
+            return await apiClient.get(`/appointments/doctor/${doctorId}?${params}`);
         } catch (error) {
             console.error('Error fetching doctor appointments:', error);
             throw error;
         }
     }
 
-    // ========== CAMBIOS DE ESTADO ==========
+    // ========== CITAS POR TIEMPO ==========
 
-    // Confirmar cita
-    async confirmAppointment(id) {
+    // Obtener citas de hoy
+    async getTodaysAppointments() {
         try {
-            const response = await fetch(`${API_BASE_URL}/appointments/${id}/confirm`, {
-                method: 'PATCH',
-                headers: this.getHeaders(),
+            return await apiClient.get('/appointments/today');
+        } catch (error) {
+            console.error('Error fetching today appointments:', error);
+            throw error;
+        }
+    }
+
+    // Obtener citas próximas
+    async getUpcomingAppointments(days = 7) {
+        try {
+            return await apiClient.get(`/appointments/upcoming?days=${days}`);
+        } catch (error) {
+            console.error('Error fetching upcoming appointments:', error);
+            throw error;
+        }
+    }
+
+    // Obtener citas por rango de fechas
+    async getAppointmentsByDateRange(startDate, endDate, filters = {}) {
+        try {
+            const params = new URLSearchParams({
+                startDate,
+                endDate,
+                ...Object.fromEntries(
+                    Object.entries(filters).filter(([_, value]) => value !== null && value !== undefined && value !== '')
+                )
             });
 
-            const result = await this.handleResponse(response);
-            return result.data.appointment;
+            return await apiClient.get(`/appointments/date-range?${params}`);
+        } catch (error) {
+            console.error('Error fetching appointments by date range:', error);
+            throw error;
+        }
+    }
+
+    // ========== GESTIÓN DE ESTADO ==========
+
+    // Confirmar cita
+    async confirmAppointment(id, notes = '') {
+        try {
+            return await apiClient.patch(`/appointments/${id}/confirm`, { notes });
         } catch (error) {
             console.error('Error confirming appointment:', error);
             throw error;
@@ -180,14 +168,7 @@ class AppointmentService {
     // Cancelar cita
     async cancelAppointment(id, reason = '') {
         try {
-            const response = await fetch(`${API_BASE_URL}/appointments/${id}/cancel`, {
-                method: 'PATCH',
-                headers: this.getHeaders(),
-                body: JSON.stringify({ reason }),
-            });
-
-            const result = await this.handleResponse(response);
-            return result.data.appointment;
+            return await apiClient.patch(`/appointments/${id}/cancel`, { reason });
         } catch (error) {
             console.error('Error canceling appointment:', error);
             throw error;
@@ -197,136 +178,52 @@ class AppointmentService {
     // Completar cita
     async completeAppointment(id, notes = '') {
         try {
-            const response = await fetch(`${API_BASE_URL}/appointments/${id}/complete`, {
-                method: 'PATCH',
-                headers: this.getHeaders(),
-                body: JSON.stringify({ notes }),
-            });
-
-            const result = await this.handleResponse(response);
-            return result.data.appointment;
+            return await apiClient.patch(`/appointments/${id}/complete`, { notes });
         } catch (error) {
             console.error('Error completing appointment:', error);
             throw error;
         }
     }
 
-    // Iniciar cita
-    async startAppointment(id) {
+    // Marcar como no presentado
+    async markAsNoShow(id, notes = '') {
         try {
-            const response = await fetch(`${API_BASE_URL}/appointments/${id}/start`, {
-                method: 'PATCH',
-                headers: this.getHeaders(),
-            });
-
-            const result = await this.handleResponse(response);
-            return result.data.appointment;
+            return await apiClient.patch(`/appointments/${id}/no-show`, { notes });
         } catch (error) {
-            console.error('Error starting appointment:', error);
+            console.error('Error marking as no show:', error);
             throw error;
         }
     }
 
-    // Marcar como no asistió
-    async markAsNoShow(id) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/appointments/${id}/no-show`, {
-                method: 'PATCH',
-                headers: this.getHeaders(),
-            });
-
-            const result = await this.handleResponse(response);
-            return result.data.appointment;
-        } catch (error) {
-            console.error('Error marking as no-show:', error);
-            throw error;
-        }
-    }
-
-    // Reprogramar cita
-    async rescheduleAppointment(id, newDate, newTime, reason = '') {
-        try {
-            const response = await fetch(`${API_BASE_URL}/appointments/${id}/reschedule`, {
-                method: 'PATCH',
-                headers: this.getHeaders(),
-                body: JSON.stringify({
-                    appointmentDate: newDate,
-                    appointmentTime: newTime,
-                    reason
-                }),
-            });
-
-            const result = await this.handleResponse(response);
-            return result.data.appointment;
-        } catch (error) {
-            console.error('Error rescheduling appointment:', error);
-            throw error;
-        }
-    }
-
-    // ========== CONSULTAS ESPECIALES ==========
+    // ========== DISPONIBILIDAD ==========
 
     // Verificar disponibilidad
-    async checkAvailability(doctorId, date, time, duration = 30) {
+    async checkAvailability(doctorId, date, time) {
         try {
             const params = new URLSearchParams({
-                doctorId: doctorId.toString(),
+                doctorId,
                 date,
-                time,
-                duration: duration.toString()
+                time
             });
 
-            const response = await fetch(`${API_BASE_URL}/appointments/check-availability?${params}`, {
-                method: 'GET',
-                headers: this.getHeaders(),
-            });
-
-            const result = await this.handleResponse(response);
-            return result.data.availability;
+            return await apiClient.get(`/appointments/check-availability?${params}`);
         } catch (error) {
             console.error('Error checking availability:', error);
             throw error;
         }
     }
 
-    // Obtener citas del día
-    async getTodaysAppointments(filters = {}) {
-        try {
-            const params = new URLSearchParams(
-                Object.fromEntries(
-                    Object.entries(filters).filter(([_, value]) => value !== null && value !== undefined && value !== '')
-                )
-            );
-
-            const response = await fetch(`${API_BASE_URL}/appointments/today?${params}`, {
-                method: 'GET',
-                headers: this.getHeaders(),
-            });
-
-            const result = await this.handleResponse(response);
-            return result.data;
-        } catch (error) {
-            console.error('Error fetching today\'s appointments:', error);
-            throw error;
-        }
-    }
-
-    // Obtener citas próximas
-    async getUpcomingAppointments(hours = 24) {
+    // Obtener slots disponibles
+    async getAvailableSlots(doctorId, date) {
         try {
             const params = new URLSearchParams({
-                hours: hours.toString()
+                doctorId,
+                date
             });
 
-            const response = await fetch(`${API_BASE_URL}/appointments/upcoming?${params}`, {
-                method: 'GET',
-                headers: this.getHeaders(),
-            });
-
-            const result = await this.handleResponse(response);
-            return result.data;
+            return await apiClient.get(`/appointments/available-slots?${params}`);
         } catch (error) {
-            console.error('Error fetching upcoming appointments:', error);
+            console.error('Error fetching available slots:', error);
             throw error;
         }
     }
@@ -334,141 +231,100 @@ class AppointmentService {
     // ========== ESTADÍSTICAS ==========
 
     // Obtener estadísticas de citas
-    async getAppointmentStats() {
+    async getAppointmentStats(filters = {}) {
         try {
-            const response = await fetch(`${API_BASE_URL}/appointments/stats`, {
-                method: 'GET',
-                headers: this.getHeaders(),
-            });
+            const params = new URLSearchParams(
+                Object.fromEntries(
+                    Object.entries(filters).filter(([_, value]) => value !== null && value !== undefined && value !== '')
+                )
+            );
 
-            const result = await this.handleResponse(response);
-            return result.data.stats;
+            const queryString = params.toString();
+            const url = queryString ? `/appointments/stats?${queryString}` : '/appointments/stats';
+            
+            return await apiClient.get(url);
         } catch (error) {
             console.error('Error fetching appointment stats:', error);
             throw error;
         }
     }
 
-    // ========== UTILIDADES ==========
+    // Obtener estadísticas por médico
+    async getDoctorAppointmentStats(doctorId, filters = {}) {
+        try {
+            const params = new URLSearchParams(
+                Object.fromEntries(
+                    Object.entries(filters).filter(([_, value]) => value !== null && value !== undefined && value !== '')
+                )
+            );
 
-    // Formatear fecha para input
-    formatDateForInput(date) {
-        if (!date) return '';
-        const d = new Date(date);
-        return d.toISOString().split('T')[0];
-    }
-
-    // Formatear hora para input
-    formatTimeForInput(time) {
-        if (!time) return '';
-        return time.substring(0, 5); // HH:MM
-    }
-
-    // Obtener color del estado
-    getStatusColor(status) {
-        const colors = {
-            'scheduled': '#6B7280',    // Gris
-            'confirmed': '#3B82F6',    // Azul
-            'in_progress': '#F59E0B',  // Amarillo
-            'completed': '#10B981',    // Verde
-            'cancelled': '#EF4444',    // Rojo
-            'no_show': '#8B5CF6'       // Púrpura
-        };
-        return colors[status] || '#6B7280';
-    }
-
-    // Obtener texto del estado
-    getStatusText(status) {
-        const texts = {
-            'scheduled': 'Programada',
-            'confirmed': 'Confirmada',
-            'in_progress': 'En Progreso',
-            'completed': 'Completada',
-            'cancelled': 'Cancelada',
-            'no_show': 'No Asistió'
-        };
-        return texts[status] || status;
-    }
-
-    // Obtener color de prioridad
-    getPriorityColor(priority) {
-        const colors = {
-            'low': '#10B981',      // Verde
-            'normal': '#6B7280',   // Gris
-            'high': '#F59E0B',     // Amarillo
-            'urgent': '#EF4444'    // Rojo
-        };
-        return colors[priority] || '#6B7280';
-    }
-
-    // Obtener texto de prioridad
-    getPriorityText(priority) {
-        const texts = {
-            'low': 'Baja',
-            'normal': 'Normal',
-            'high': 'Alta',
-            'urgent': 'Urgente'
-        };
-        return texts[priority] || priority;
-    }
-
-    // Validar datos de cita
-    validateAppointmentData(data) {
-        const errors = [];
-
-        if (!data.patientId) {
-            errors.push('El paciente es obligatorio');
+            return await apiClient.get(`/appointments/stats/doctor/${doctorId}?${params}`);
+        } catch (error) {
+            console.error('Error fetching doctor appointment stats:', error);
+            throw error;
         }
-
-        if (!data.doctorId) {
-            errors.push('El médico es obligatorio');
-        }
-
-        if (!data.appointmentDate) {
-            errors.push('La fecha es obligatoria');
-        } else {
-            const appointmentDate = new Date(data.appointmentDate);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            if (appointmentDate < today) {
-                errors.push('La fecha no puede ser en el pasado');
-            }
-        }
-
-        if (!data.appointmentTime) {
-            errors.push('La hora es obligatoria');
-        }
-
-        if (!data.reason || data.reason.trim().length < 10) {
-            errors.push('El motivo debe tener al menos 10 caracteres');
-        }
-
-        return errors;
     }
 
-    // Calcular duración hasta la cita
-    calculateTimeUntilAppointment(date, time) {
-        const appointmentDateTime = new Date(`${date}T${time}`);
-        const now = new Date();
-        const diffMs = appointmentDateTime - now;
-        
-        if (diffMs < 0) {
-            return { isPast: true, text: 'Pasada' };
+    // ========== NOTIFICACIONES ==========
+
+    // Enviar recordatorio
+    async sendReminder(id, type = 'email') {
+        try {
+            return await apiClient.post(`/appointments/${id}/reminder`, { type });
+        } catch (error) {
+            console.error('Error sending reminder:', error);
+            throw error;
         }
+    }
 
-        const hours = Math.floor(diffMs / (1000 * 60 * 60));
-        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-        const days = Math.floor(hours / 24);
+    // ========== REPORTES ==========
 
-        if (days > 0) {
-            return { isPast: false, text: `En ${days} día(s)` };
-        } else if (hours > 0) {
-            return { isPast: false, text: `En ${hours}h ${minutes}m` };
-        } else {
-            return { isPast: false, text: `En ${minutes} minutos` };
+    // Generar reporte de citas
+    async generateAppointmentReport(filters = {}, format = 'pdf') {
+        try {
+            const params = new URLSearchParams({
+                format,
+                ...Object.fromEntries(
+                    Object.entries(filters).filter(([_, value]) => value !== null && value !== undefined && value !== '')
+                )
+            });
+
+            return await apiClient.get(`/appointments/report?${params}`);
+        } catch (error) {
+            console.error('Error generating appointment report:', error);
+            throw error;
+        }
+    }
+
+    // ========== BULK OPERATIONS ==========
+
+    // Operaciones en lote
+    async bulkUpdateAppointments(appointmentIds, updateData) {
+        try {
+            return await apiClient.patch('/appointments/bulk-update', {
+                appointmentIds,
+                updateData
+            });
+        } catch (error) {
+            console.error('Error bulk updating appointments:', error);
+            throw error;
+        }
+    }
+
+    // Cancelación en lote
+    async bulkCancelAppointments(appointmentIds, reason = '') {
+        try {
+            return await apiClient.patch('/appointments/bulk-cancel', {
+                appointmentIds,
+                reason
+            });
+        } catch (error) {
+            console.error('Error bulk canceling appointments:', error);
+            throw error;
         }
     }
 }
 
-export default new AppointmentService();
+// Exportar instancia del servicio
+const appointmentService = new AppointmentService();
+export default appointmentService;

@@ -5,6 +5,13 @@ const Doctor = require('../../doctors/models/doctor');
 const Specialty = require('../../specialties/models/specialty');
 const Appointment = require('../../appointments/models/appointment'); // ← NUEVO
 const AppointmentStatus = require('../../appointments/models/appointmentStatus'); // ← NUEVO
+const Schedule = require('../../appointments/models/schedule'); // ← NUEVO
+const MedicalRecord = require('../../medicalRecord/models/medicalRecord'); // ← EQUIPO 3
+const Treatment = require('../../treatment/models/treatment'); // ← EQUIPO 3
+const Prescription = require('../../prescription/models/prescription'); // ← EQUIPO 3
+const MedicalExam = require('../../medicalExam/models/medicalExam'); // ← EQUIPO 3
+const Invoice = require('../../invoice/models/invoice'); // ← EQUIPO 3
+const Payment = require('../../payment/models/payment'); // ← EQUIPO 3
 
 const setupAssociations = () => {
     try {
@@ -15,6 +22,13 @@ const setupAssociations = () => {
         const SpecialtyModel = Specialty();
         const AppointmentModel = Appointment(); // ← NUEVO
         const AppointmentStatusModel = AppointmentStatus(); // ← NUEVO
+        const ScheduleModel = Schedule(); // ← NUEVO
+        const MedicalRecordModel = MedicalRecord(); // ← EQUIPO 3
+        const TreatmentModel = Treatment(); // ← EQUIPO 3
+        const PrescriptionModel = Prescription(); // ← EQUIPO 3
+        const MedicalExamModel = MedicalExam(); // ← EQUIPO 3
+        const InvoiceModel = Invoice(); // ← EQUIPO 3
+        const PaymentModel = Payment(); // ← EQUIPO 3
 
         // ========== ASOCIACIONES EXISTENTES (EQUIPO 1) ==========
 
@@ -114,10 +128,24 @@ const setupAssociations = () => {
         });
         */
 
-        // ========== ASOCIACIONES FUTURAS (EQUIPO 3) ==========
-        // Estas se agregarán cuando el Equipo 3 complete sus modelos
+        // ========== ASOCIACIONES DEL SCHEDULE (EQUIPO 2) ==========
 
-        /*
+        // Doctor -> Schedule (1:N)
+        DoctorModel.hasMany(ScheduleModel, {
+            foreignKey: 'doctor_id',
+            as: 'schedules',
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE'
+        });
+
+        ScheduleModel.belongsTo(DoctorModel, {
+            foreignKey: 'doctor_id',
+            as: 'doctor',
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE'
+        });
+
+        // ========== ASOCIACIONES DEL EQUIPO 3 ==========
         // Appointment -> MedicalRecord (1:1)
         AppointmentModel.hasOne(MedicalRecordModel, {
             foreignKey: 'appointment_id',
@@ -237,23 +265,42 @@ const setupAssociations = () => {
             onDelete: 'RESTRICT',
             onUpdate: 'CASCADE'
         });
-        */
+
+        // MedicalRecord -> MedicalExam (1:N)
+        MedicalRecordModel.hasMany(MedicalExamModel, {
+            foreignKey: 'medical_record_id',
+            as: 'medicalExams',
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE'
+        });
+
+        MedicalExamModel.belongsTo(MedicalRecordModel, {
+            foreignKey: 'medical_record_id',
+            as: 'medicalRecord',
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE'
+        });
 
         console.log('✅ Model associations established successfully');
-        console.log('📊 Models with associations:');
-        console.log('   - User ↔ Patient, Doctor');
-        console.log('   - Specialty ↔ Doctor');
-        console.log('   - Patient ↔ Appointment');
-        console.log('   - Doctor ↔ Appointment');
-        console.log('   - Future: MedicalRecord, Treatment, Invoice, Payment');
+        console.log('📊 All Models with associations:');
+        console.log('   🟦 EQUIPO 1: User ↔ Patient, Doctor ↔ Specialty');
+        console.log('   🟩 EQUIPO 2: Patient ↔ Appointment ↔ Doctor, Doctor ↔ Schedule');
+        console.log('   🟨 EQUIPO 3: MedicalRecord ↔ Treatment ↔ Prescription, Invoice ↔ Payment, MedicalExam');
         
         return {
             User: UserModel,
             Patient: PatientModel,
             Doctor: DoctorModel,
             Specialty: SpecialtyModel,
-            Appointment: AppointmentModel, // ← NUEVO
-            AppointmentStatus: AppointmentStatusModel // ← NUEVO
+            Appointment: AppointmentModel,
+            AppointmentStatus: AppointmentStatusModel,
+            Schedule: ScheduleModel,
+            MedicalRecord: MedicalRecordModel,
+            Treatment: TreatmentModel,
+            Prescription: PrescriptionModel,
+            MedicalExam: MedicalExamModel,
+            Invoice: InvoiceModel,
+            Payment: PaymentModel
         };
 
     } catch (error) {
@@ -269,7 +316,14 @@ module.exports = {
         Patient,
         Doctor,
         Specialty,
-        Appointment, // ← NUEVO
-        AppointmentStatus // ← NUEVO
+        Appointment,
+        AppointmentStatus,
+        Schedule,
+        MedicalRecord,
+        Treatment,
+        Prescription,
+        MedicalExam,
+        Invoice,
+        Payment
     }
 };
