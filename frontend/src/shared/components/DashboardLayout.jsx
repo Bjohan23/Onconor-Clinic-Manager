@@ -57,6 +57,65 @@ export const DashboardLayout = ({ children }) => {
         </svg>
       )
     },
+    // --- TEAM 3 ---
+    { 
+      name: 'Historiales Médicos', 
+      href: '/medical-records', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+        </svg>
+      )
+    },
+    { 
+      name: 'Tratamientos', 
+      href: '/treatments', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2a4 4 0 014-4h4" />
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={2} fill="none"/>
+        </svg>
+      )
+    },
+    { 
+      name: 'Prescripciones', 
+      href: '/prescriptions', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      )
+    },
+    { 
+      name: 'Exámenes Médicos', 
+      href: '/medical-exams', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={2} fill="none"/>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h4l3 3" />
+        </svg>
+      )
+    },
+    { 
+      name: 'Facturación', 
+      href: '/invoices', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l2-2 4 4m0 0V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2h6a2 2 0 002-2z" />
+        </svg>
+      )
+    },
+    { 
+      name: 'Pagos', 
+      href: '/payments', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <rect width="20" height="14" x="2" y="5" rx="2" stroke="currentColor" strokeWidth={2} fill="none"/>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2 10h20" />
+        </svg>
+      )
+    },
+    // --- FIN TEAM 3 ---
     { 
       name: 'Reportes', 
       href: '/reports', 
@@ -75,7 +134,11 @@ export const DashboardLayout = ({ children }) => {
         </svg>
       )
     },
+
+
+
   ]
+
 
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/')
