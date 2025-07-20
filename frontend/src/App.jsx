@@ -36,6 +36,18 @@ const Payments = lazy(() => import('./payment/pages/PaymentsPage'))
 const CreatePayment = lazy(() => import('./payment/pages/CreatePaymentPage'))
 const EditPayment = lazy(() => import('./payment/pages/EditPaymentPage'))
 
+// Appointments - Agregando importación de citas MODERNAS
+const Appointments = lazy(() => import('./pages/ModernAppointments'))
+
+// Specialties - Agregando importación de especialidades
+const Specialties = lazy(() => import('./specialties/pages/SpecialtiesPage'))
+
+// Reports - Agregando importación de reportes
+const Reports = lazy(() => import('./reports/pages/ReportsPage'))
+
+// Schedules - Agregando importación de horarios
+const Schedules = lazy(() => import('./schedules/pages/SchedulesPage'))
+
 function App() {
   return (
     <ThemeProvider>
@@ -86,6 +98,18 @@ function App() {
                           <Route path="/payments" element={<Payments />} />
                           <Route path="/payments/create" element={<CreatePayment />} />
                           <Route path="/payments/edit/:id" element={<EditPayment />} />
+                          
+                          {/* Rutas de Citas - HABILITADO */}
+                          <Route path="/appointments" element={<Appointments />} />
+                          
+                          {/* Rutas de Especialidades - HABILITADO */}
+                          <Route path="/specialties" element={<Specialties />} />
+                          
+                          {/* Rutas de Reportes - HABILITADO */}
+                          <Route path="/reports" element={<Reports />} />
+                          
+                          {/* Rutas de Horarios - HABILITADO */}
+                          <Route path="/schedules" element={<Schedules />} />
                         </Routes>
                       </Suspense>
                     </DashboardLayout>

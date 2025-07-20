@@ -1,12 +1,26 @@
-const { Appointment, Patient, Doctor, Specialty, User } = require('../../shared/models');
+const { sequelize } = require('../../config/database');
 const { Op } = require('sequelize');
 
 class AppointmentRepository {
     
+    constructor() {
+        // Obtener los modelos desde sequelize
+        this.getModels = () => {
+            return {
+                Appointment: sequelize.models.appointments,
+                Patient: sequelize.models.patients,
+                Doctor: sequelize.models.doctors,
+                Specialty: sequelize.models.specialties,
+                User: sequelize.models.users
+            };
+        };
+    }
+    
     // Crear una nueva cita
     async createAppointment(appointmentData) {
         try {
-            const appointment = await Appointment().create(appointmentData);
+            const { Appointment } = this.getModels();
+            const appointment = await Appointment.create(appointmentData);
             return appointment;
         } catch (error) {
             throw new Error(`Error al crear cita: ${error.message}`);
@@ -16,32 +30,33 @@ class AppointmentRepository {
     // Buscar cita por ID
     async findById(id) {
         try {
-            const appointment = await Appointment().findOne({
+            const { Appointment, Patient, Doctor, Specialty, User } = this.getModels();
+            const appointment = await Appointment.findOne({
                 where: { 
                     id: id,
                     flg_deleted: false
                 },
                 include: [
                     {
-                        model: Patient(),
+                        model: Patient,
                         as: 'patient',
                         include: [{
-                            model: User(),
+                            model: User,
                             as: 'user',
                             attributes: { exclude: ['password'] }
                         }]
                     },
                     {
-                        model: Doctor(),
+                        model: Doctor,
                         as: 'doctor',
                         include: [
                             {
-                                model: User(),
+                                model: User,
                                 as: 'user',
                                 attributes: { exclude: ['password'] }
                             },
                             {
-                                model: Specialty(),
+                                model: Specialty,
                                 as: 'specialty'
                             }
                         ]
@@ -80,14 +95,15 @@ class AppointmentRepository {
                 };
             }
 
-            const appointments = await Appointment().findAll({
+            const { Appointment, Doctor, Specialty } = this.getModels();
+            const appointments = await Appointment.findAll({
                 where: whereClause,
                 include: [
                     {
-                        model: Doctor(),
+                        model: Doctor,
                         as: 'doctor',
                         include: [{
-                            model: Specialty(),
+                            model: Specialty,
                             as: 'specialty'
                         }]
                     }
@@ -124,14 +140,15 @@ class AppointmentRepository {
                 };
             }
 
-            const appointments = await Appointment().findAll({
+            const { Appointment, Patient, User } = this.getModels();
+            const appointments = await Appointment.findAll({
                 where: whereClause,
                 include: [
                     {
-                        model: Patient(),
+                        model: Patient,
                         as: 'patient',
                         include: [{
-                            model: User(),
+                            model: User,
                             as: 'user',
                             attributes: { exclude: ['password'] }
                         }]
@@ -149,7 +166,8 @@ class AppointmentRepository {
     // Buscar citas por fecha y médico (para verificar disponibilidad)
     async findByDateAndDoctor(date, doctorId) {
         try {
-            const appointments = await Appointment().findAll({
+            const { Appointment } = this.getModels();
+            const appointments = await Appointment.findAll({
                 where: {
                     appointmentDate: date,
                     doctorId: doctorId,
@@ -171,7 +189,8 @@ class AppointmentRepository {
     // Actualizar cita
     async updateAppointment(appointmentId, appointmentData) {
         try {
-            const [updatedRows] = await Appointment().update(
+            const { Appointment } = this.getModels();
+            const [updatedRows] = await Appointment.update(
                 appointmentData,
                 { 
                     where: { 
@@ -199,7 +218,8 @@ class AppointmentRepository {
                 updateData.notes = reason ? `Cancelada: ${reason}` : 'Cancelada';
             }
 
-            const [updatedRows] = await Appointment().update(
+            const { Appointment } = this.getModels();
+            const [updatedRows] = await Appointment.update(
                 updateData,
                 { 
                     where: { 
@@ -221,7 +241,8 @@ class AppointmentRepository {
     // Confirmar cita
     async confirmAppointment(appointmentId, confirmedBy) {
         try {
-            const [updatedRows] = await Appointment().update(
+            const { Appointment } = this.getModels();
+            const [updatedRows] = await Appointment.update(
                 { 
                     status: 'confirmed',
                     user_updated: confirmedBy
@@ -253,7 +274,8 @@ class AppointmentRepository {
                 updateData.notes = notes;
             }
 
-            const [updatedRows] = await Appointment().update(
+            const { Appointment } = this.getModels();
+            const [updatedRows] = await Appointment.update(
                 updateData,
                 { 
                     where: { 
@@ -309,29 +331,30 @@ class AppointmentRepository {
                 ];
             }
 
-            const { count, rows } = await Appointment().findAndCountAll({
+            const { Appointment, Patient, Doctor, Specialty, User } = this.getModels();
+            const { count, rows } = await Appointment.findAndCountAll({
                 where: whereClause,
                 include: [
                     {
-                        model: Patient(),
+                        model: Patient,
                         as: 'patient',
                         include: [{
-                            model: User(),
+                            model: User,
                             as: 'user',
                             attributes: { exclude: ['password'] }
                         }]
                     },
                     {
-                        model: Doctor(),
+                        model: Doctor,
                         as: 'doctor',
                         include: [
                             {
-                                model: User(),
+                                model: User,
                                 as: 'user',
                                 attributes: { exclude: ['password'] }
                             },
                             {
-                                model: Specialty(),
+                                model: Specialty,
                                 as: 'specialty'
                             }
                         ]
@@ -373,7 +396,8 @@ class AppointmentRepository {
                 whereClause.id = { [Op.ne]: excludeAppointmentId };
             }
 
-            const conflictingAppointments = await Appointment().findAll({
+            const { Appointment } = this.getModels();
+            const conflictingAppointments = await Appointment.findAll({
                 where: whereClause
             });
 
@@ -411,16 +435,16 @@ class AppointmentRepository {
     // Obtener estadísticas de citas
     async getAppointmentStats() {
         try {
-            const AppointmentModel = Appointment();
+            const { Appointment } = this.getModels();
             
-            const totalAppointments = await AppointmentModel.count({
+            const totalAppointments = await Appointment.count({
                 where: { flg_deleted: false }
             });
 
-            const appointmentsByStatus = await AppointmentModel.findAll({
+            const appointmentsByStatus = await Appointment.findAll({
                 attributes: [
                     'status',
-                    [AppointmentModel.sequelize.fn('COUNT', AppointmentModel.sequelize.col('id')), 'count']
+                    [Appointment.sequelize.fn('COUNT', Appointment.sequelize.col('id')), 'count']
                 ],
                 where: { 
                     flg_deleted: false,
@@ -430,7 +454,7 @@ class AppointmentRepository {
                 raw: true
             });
 
-            const todaysAppointments = await AppointmentModel.count({
+            const todaysAppointments = await Appointment.count({
                 where: {
                     appointmentDate: new Date().toISOString().split('T')[0],
                     flg_deleted: false,
@@ -454,7 +478,8 @@ class AppointmentRepository {
             const now = new Date();
             const today = now.toISOString().split('T')[0];
 
-            const appointments = await Appointment().findAll({
+            const { Appointment, Patient, Doctor, User } = this.getModels();
+            const appointments = await Appointment.findAll({
                 where: {
                     appointmentDate: {
                         [Op.gte]: today
@@ -467,19 +492,19 @@ class AppointmentRepository {
                 },
                 include: [
                     {
-                        model: Patient(),
+                        model: Patient,
                         as: 'patient',
                         include: [{
-                            model: User(),
+                            model: User,
                             as: 'user',
                             attributes: { exclude: ['password'] }
                         }]
                     },
                     {
-                        model: Doctor(),
+                        model: Doctor,
                         as: 'doctor',
                         include: [{
-                            model: User(),
+                            model: User,
                             as: 'user',
                             attributes: { exclude: ['password'] }
                         }]

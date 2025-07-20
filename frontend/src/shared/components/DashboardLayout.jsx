@@ -46,8 +46,7 @@ export const DashboardLayout = ({ children }) => {
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m0 0h4M9 7h6m-6 4h6m-2 4h.01" />
         </svg>
-      ),
-      disabled: true
+      )
     },
     { 
       name: 'Citas', 
@@ -56,8 +55,7 @@ export const DashboardLayout = ({ children }) => {
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v16a2 2 0 002 2z" />
         </svg>
-      ),
-      disabled: true
+      )
     },
     { 
       name: 'Reportes', 
@@ -66,8 +64,16 @@ export const DashboardLayout = ({ children }) => {
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
-      ),
-      disabled: true
+      )
+    },
+    { 
+      name: 'Horarios', 
+      href: '/schedules', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      )
     },
   ]
 
@@ -81,35 +87,45 @@ export const DashboardLayout = ({ children }) => {
   }
 
   return (
-    <div className="h-screen flex overflow-hidden" 
-         style={{ backgroundColor: colors.background.secondary }}>
+    <div className="h-screen flex overflow-hidden relative" 
+         style={{ 
+           background: isDarkMode 
+             ? 'linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 25%, #16213e 50%, #0f0f1e 75%)'
+             : 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%)',
+           backgroundSize: '400% 400%',
+           animation: 'gradientBg 20s ease infinite'
+         }}>
+      
+      {/* Floating background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-gradient-to-r from-blue-400 to-purple-600 rounded-full opacity-5 animate-float"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-gradient-to-r from-pink-400 to-red-600 rounded-full opacity-5 animate-float" style={{animationDelay: '2s'}}></div>
+      </div>
+
       {/* Sidebar */}
       <div 
-        className={`${sidebarOpen ? 'w-64' : 'w-16'} transition-all duration-300 flex flex-col shadow-xl`}
+        className={`${sidebarOpen ? 'w-64' : 'w-16'} transition-all duration-500 flex flex-col dashboard-sidebar glass-dark backdrop-blur-xl border-r border-white/10`}
         style={{ 
-          backgroundColor: colors.background.primary,
-          borderRight: `1px solid ${colors.border.light}`
+          backdropFilter: 'blur(20px)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+          zIndex: 1000
         }}
       >
-        {/* Logo */}
-        <div className="flex items-center justify-center h-16 px-4 border-b"
-             style={{ borderColor: colors.border.light }}>
+        {/* Modern Logo */}
+        <div className="flex items-center justify-center h-20 px-4 border-b border-white/10">
           <div className="flex items-center">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center mr-3 shadow-lg"
-                 style={{ 
-                   background: `linear-gradient(135deg, ${colors.primary[500]} 0%, ${colors.primary[600]} 100%)` 
-                 }}>
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mr-3 bg-gradient-primary neon-blue animate-pulse-glow">
+              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
                       d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
             {sidebarOpen && (
               <div>
-                <h1 className="text-xl font-bold" style={{ color: colors.text.primary }}>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent neon-text">
                   Onconor
                 </h1>
-                <p className="text-xs" style={{ color: colors.text.tertiary }}>
+                <p className="text-xs text-gray-400 tracking-wider uppercase">
                   Clinic Manager
                 </p>
               </div>
@@ -127,18 +143,20 @@ export const DashboardLayout = ({ children }) => {
                 key={item.name}
                 to={item.disabled ? '#' : item.href}
                 className={`
-                  flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200
-                  ${item.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md'}
-                  ${active ? 'shadow-lg transform scale-105' : ''}
+                  group flex items-center px-4 py-4 text-sm font-medium rounded-2xl transition-all duration-300
+                  ${item.disabled ? 'opacity-40 cursor-not-allowed' : 'hover:transform hover:scale-105 card-hover'}
+                  ${active ? 'shadow-xl transform scale-105 neon-blue' : ''}
                 `}
                 style={{
                   background: active 
-                    ? `linear-gradient(135deg, ${colors.primary[500]} 0%, ${colors.primary[600]} 100%)`
+                    ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%)'
                     : item.disabled 
                       ? 'transparent'
-                      : colors.background.secondary,
-                  color: active ? colors.text.inverse : colors.text.secondary,
-                  boxShadow: active ? `0 8px 25px ${colors.primary[500]}30` : 'none'
+                      : 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: active ? 'blur(20px)' : 'blur(10px)',
+                  border: active ? '1px solid rgba(102, 126, 234, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
+                  color: active ? '#ffffff' : '#cbd5e1',
+                  boxShadow: active ? '0 0 30px rgba(102, 126, 234, 0.4)' : 'none'
                 }}
                 onClick={(e) => item.disabled && e.preventDefault()}
               >
@@ -187,32 +205,35 @@ export const DashboardLayout = ({ children }) => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="h-16 flex items-center justify-between px-6 shadow-sm border-b"
+      <div className="flex-1 flex flex-col overflow-hidden dashboard-content">
+        {/* Modern Header */}
+        <header className="h-20 flex items-center justify-between px-8 glass backdrop-blur-xl border-b border-white/10 dashboard-header"
                 style={{ 
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light 
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                  zIndex: 999
                 }}>
           <div className="flex items-center">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-lg transition-colors hover:shadow-md"
+              className="p-3 rounded-2xl transition-all duration-300 hover:transform hover:scale-110 glass"
               style={{ 
-                color: colors.text.secondary,
-                backgroundColor: colors.background.secondary
+                background: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                color: '#cbd5e1'
               }}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <div className="ml-4">
-              <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>
+            <div className="ml-6">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                 {navigation.find(item => isActive(item.href))?.name || 'Dashboard'}
               </h2>
-              <p className="text-xs" style={{ color: colors.text.tertiary }}>
-                Bienvenido de vuelta, {user?.firstName || 'Usuario'}
+              <p className="text-sm text-gray-400 mt-1">
+                Bienvenido de vuelta, <span className="text-blue-400 font-medium">{user?.firstName || 'Usuario'}</span>
               </p>
             </div>
           </div>
@@ -221,25 +242,23 @@ export const DashboardLayout = ({ children }) => {
           <div className="relative">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex items-center space-x-3 text-sm rounded-xl px-3 py-2 transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+              className="flex items-center space-x-4 text-sm rounded-2xl px-4 py-3 transition-all duration-300 hover:transform hover:scale-105 glass focus:outline-none card-hover"
               style={{ 
-                backgroundColor: colors.background.secondary,
-                focusRingColor: colors.primary[500] 
+                background: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.15)'
               }}
             >
-              <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-inner"
-                   style={{ 
-                     background: `linear-gradient(135deg, ${colors.primary[400]} 0%, ${colors.primary[500]} 100%)` 
-                   }}>
-                <span className="text-sm font-semibold text-white">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-primary neon-blue animate-pulse-glow">
+                <span className="text-sm font-bold text-white">
                   {user?.firstName?.[0]?.toUpperCase() || 'U'}
                 </span>
               </div>
               <div className="hidden md:block text-left">
-                <p className="font-medium" style={{ color: colors.text.primary }}>
+                <p className="font-semibold text-white">
                   {user?.firstName || 'Usuario'}
                 </p>
-                <p className="text-xs" style={{ color: colors.text.tertiary }}>
+                <p className="text-xs text-blue-400 uppercase tracking-wider">
                   {user?.role || 'Administrador'}
                 </p>
               </div>
@@ -282,10 +301,12 @@ export const DashboardLayout = ({ children }) => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-6 relative">
           {children}
         </main>
       </div>
+
+      {/* CSS Animations ya están definidas en index.css */}
     </div>
   )
 }

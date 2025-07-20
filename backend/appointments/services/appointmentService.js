@@ -407,20 +407,29 @@ class AppointmentService {
         try {
             const stats = await appointmentRepository.getAppointmentStats();
 
+            // Validar que byStatus existe y es un array
+            const byStatus = stats.byStatus || [];
+            
             // Calcular tasas y porcentajes
-            const totalActive = stats.byStatus.reduce((sum, item) => sum + parseInt(item.dataValues.count), 0);
+            const totalActive = byStatus.reduce((sum, item) => {
+                const count = item.dataValues?.count || item.count || 0;
+                return sum + parseInt(count);
+            }, 0);
             
             const enrichedStats = {
                 ...stats,
                 totalActive,
-                statusDistribution: stats.byStatus.map(item => ({
-                    status: item.status,
-                    count: parseInt(item.dataValues.count),
-                    percentage: ((parseInt(item.dataValues.count) / totalActive) * 100).toFixed(1),
-                    display: this.getStatusDisplay(item.status)
-                })),
-                completionRate: this.calculateCompletionRate(stats.byStatus),
-                cancellationRate: this.calculateCancellationRate(stats.byStatus)
+                statusDistribution: byStatus.map(item => {
+                    const count = item.dataValues?.count || item.count || 0;
+                    return {
+                        status: item.status,
+                        count: parseInt(count),
+                        percentage: totalActive > 0 ? ((parseInt(count) / totalActive) * 100).toFixed(1) : '0.0',
+                        display: this.getStatusDisplay(item.status)
+                    };
+                }),
+                completionRate: this.calculateCompletionRate(byStatus),
+                cancellationRate: this.calculateCancellationRate(byStatus)
             };
 
             return enrichedStats;
@@ -432,21 +441,33 @@ class AppointmentService {
 
     // Calcular tasa de finalización
     calculateCompletionRate(statusStats) {
-        const completed = statusStats.find(s => s.status === 'completed');
-        const total = statusStats.reduce((sum, item) => sum + parseInt(item.dataValues.count), 0);
+        if (!statusStats || statusStats.length === 0) return '0.0';
         
-        if (total === 0) return 0;
-        return ((parseInt(completed?.dataValues.count || 0) / total) * 100).toFixed(1);
+        const completed = statusStats.find(s => s.status === 'completed');
+        const total = statusStats.reduce((sum, item) => {
+            const count = item.dataValues?.count || item.count || 0;
+            return sum + parseInt(count);
+        }, 0);
+        
+        if (total === 0) return '0.0';
+        const completedCount = completed?.dataValues?.count || completed?.count || 0;
+        return ((parseInt(completedCount) / total) * 100).toFixed(1);
     }
 
     // Calcular tasa de cancelación
     calculateCancellationRate(statusStats) {
+        if (!statusStats || statusStats.length === 0) return '0.0';
+        
         const cancelled = statusStats.find(s => s.status === 'cancelled');
         const noShow = statusStats.find(s => s.status === 'no_show');
-        const total = statusStats.reduce((sum, item) => sum + parseInt(item.dataValues.count), 0);
+        const total = statusStats.reduce((sum, item) => {
+            const count = item.dataValues?.count || item.count || 0;
+            return sum + parseInt(count);
+        }, 0);
         
-        if (total === 0) return 0;
-        const cancelledCount = parseInt(cancelled?.dataValues.count || 0) + parseInt(noShow?.dataValues.count || 0);
+        if (total === 0) return '0.0';
+        const cancelledCount = parseInt(cancelled?.dataValues?.count || cancelled?.count || 0) + 
+                              parseInt(noShow?.dataValues?.count || noShow?.count || 0);
         return ((cancelledCount / total) * 100).toFixed(1);
     }
 }
