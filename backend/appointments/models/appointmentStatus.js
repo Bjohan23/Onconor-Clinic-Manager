@@ -14,23 +14,71 @@ const defineAppointmentStatus = () => {
                 type: DataTypes.STRING(50),
                 allowNull: false,
                 unique: true,
-                comment: 'Status name'
             },
             description: {
-                type: DataTypes.TEXT,
+                type: DataTypes.STRING(255),
                 allowNull: true,
-                comment: 'Description of the status'
             },
             color: {
                 type: DataTypes.STRING(7),
-                allowNull: true,
-                defaultValue: '#000000',
-                comment: 'Color code for UI display (hex format)'
+                allowNull: false,
+                defaultValue: '#3B82F6',
+                validate: {
+                    is: /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/,
+                },
+                comment: 'Hex color code for UI display'
             },
-            active: {
+            category: {
+                type: DataTypes.ENUM('active', 'completed', 'cancelled', 'pending'),
+                allowNull: false,
+                defaultValue: 'active'
+            },
+            isDefault: {
                 type: DataTypes.BOOLEAN,
                 allowNull: false,
-                defaultValue: true
+                defaultValue: false,
+                field: 'is_default'
+            },
+            allowBooking: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: true,
+                field: 'allow_booking',
+                comment: 'Whether new appointments can be booked with this status'
+            },
+            allowCancellation: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: true,
+                field: 'allow_cancellation',
+                comment: 'Whether appointments with this status can be cancelled'
+            },
+            allowRescheduling: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: true,
+                field: 'allow_rescheduling',
+                comment: 'Whether appointments with this status can be rescheduled'
+            },
+            notifyPatient: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: true,
+                field: 'notify_patient',
+                comment: 'Whether to send notifications when status changes to this'
+            },
+            sortOrder: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                defaultValue: 0,
+                field: 'sort_order',
+                comment: 'Order for displaying in UI'
+            },
+            isActive: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: true,
+                field: 'is_active'
             },
             flg_deleted: {
                 type: DataTypes.BOOLEAN,
@@ -65,13 +113,20 @@ const defineAppointmentStatus = () => {
                     fields: ['name']
                 },
                 {
-                    fields: ['active']
+                    fields: ['category']
+                },
+                {
+                    fields: ['is_active']
+                },
+                {
+                    fields: ['sort_order']
                 }
             ]
         }
     );
 };
 
+// Función que siempre devuelve el modelo con la conexión actual
 const AppointmentStatus = () => {
     if (!sequelize.models.appointment_statuses) {
         defineAppointmentStatus();

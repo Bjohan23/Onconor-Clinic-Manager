@@ -1,23 +1,14 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require('../../config/database');
 
-const defineAppointment = () => {
+const defineSchedule = () => {
     return sequelize.define(
-        "appointments",
+        "schedules",
         {
             id: {
                 type: DataTypes.INTEGER,
                 primaryKey: true,
                 autoIncrement: true,
-            },
-            patientId: {
-                type: DataTypes.INTEGER,
-                allowNull: false,
-                field: 'patient_id',
-                references: {
-                    model: 'patients',
-                    key: 'id'
-                }
             },
             doctorId: {
                 type: DataTypes.INTEGER,
@@ -28,59 +19,80 @@ const defineAppointment = () => {
                     key: 'id'
                 }
             },
-            appointmentDate: {
-                type: DataTypes.DATEONLY,
+            dayOfWeek: {
+                type: DataTypes.INTEGER,
                 allowNull: false,
-                field: 'appointment_date'
+                field: 'day_of_week',
+                validate: {
+                    min: 0,
+                    max: 6
+                },
+                comment: '0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday'
             },
-            appointmentTime: {
+            startTime: {
                 type: DataTypes.TIME,
                 allowNull: false,
-                field: 'appointment_time'
+                field: 'start_time'
             },
-            reason: {
-                type: DataTypes.TEXT,
+            endTime: {
+                type: DataTypes.TIME,
                 allowNull: false,
+                field: 'end_time'
             },
-            status: {
-                type: DataTypes.ENUM('scheduled', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show'),
+            isAvailable: {
+                type: DataTypes.BOOLEAN,
                 allowNull: false,
-                defaultValue: 'scheduled'
+                defaultValue: true,
+                field: 'is_available'
+            },
+            breakStart: {
+                type: DataTypes.TIME,
+                allowNull: true,
+                field: 'break_start'
+            },
+            breakEnd: {
+                type: DataTypes.TIME,
+                allowNull: true,
+                field: 'break_end'
+            },
+            slotDuration: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                defaultValue: 30,
+                field: 'slot_duration',
+                comment: 'Duration of each appointment slot in minutes'
+            },
+            maxPatientsPerSlot: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                defaultValue: 1,
+                field: 'max_patients_per_slot'
+            },
+            scheduleType: {
+                type: DataTypes.ENUM('regular', 'special', 'emergency', 'surgery'),
+                allowNull: false,
+                defaultValue: 'regular',
+                field: 'schedule_type'
+            },
+            validFrom: {
+                type: DataTypes.DATEONLY,
+                allowNull: true,
+                field: 'valid_from'
+            },
+            validTo: {
+                type: DataTypes.DATEONLY,
+                allowNull: true,
+                field: 'valid_to'
+            },
+            isRecurring: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: true,
+                field: 'is_recurring'
             },
             notes: {
                 type: DataTypes.TEXT,
                 allowNull: true,
-            },
-            duration: {
-                type: DataTypes.INTEGER,
-                allowNull: false,
-                defaultValue: 30,
-                comment: 'Duration in minutes'
-            },
-            appointmentStatusId: {
-                type: DataTypes.INTEGER,
-                allowNull: true,
-                field: 'appointment_status_id',
-                references: {
-                    model: 'appointment_statuses',
-                    key: 'id'
-                }
-            },
-            priority: {
-                type: DataTypes.ENUM('low', 'normal', 'high', 'urgent'),
-                allowNull: false,
-                defaultValue: 'normal'
-            },
-            reminderSent: {
-                type: DataTypes.BOOLEAN,
-                allowNull: false,
-                defaultValue: false,
-                field: 'reminder_sent'
-            },
-            cancelReason: {
-                type: DataTypes.STRING(500),
-                allowNull: true,
-                field: 'cancel_reason'
             },
             active: {
                 type: DataTypes.BOOLEAN,
@@ -113,25 +125,22 @@ const defineAppointment = () => {
             timestamps: true,
             createdAt: "created_at",
             updatedAt: "updated_at",
-            tableName: "appointments",
+            tableName: "schedules",
             indexes: [
-                {
-                    fields: ['patient_id']
-                },
                 {
                     fields: ['doctor_id']
                 },
                 {
-                    fields: ['appointment_date']
+                    fields: ['day_of_week']
                 },
                 {
-                    fields: ['status']
+                    fields: ['doctor_id', 'day_of_week']
                 },
                 {
-                    fields: ['appointment_date', 'doctor_id']
+                    fields: ['is_available']
                 },
                 {
-                    fields: ['appointment_status_id']
+                    fields: ['valid_from', 'valid_to']
                 }
             ]
         }
@@ -139,11 +148,11 @@ const defineAppointment = () => {
 };
 
 // Función que siempre devuelve el modelo con la conexión actual
-const Appointment = () => {
-    if (!sequelize.models.appointments) {
-        defineAppointment();
+const Schedule = () => {
+    if (!sequelize.models.schedules) {
+        defineSchedule();
     }
-    return sequelize.models.appointments;
+    return sequelize.models.schedules;
 };
 
-module.exports = Appointment;
+module.exports = Schedule;

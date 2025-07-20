@@ -1,25 +1,11 @@
-const { sequelize } = require('../../config/database');
+const { Appointment, Patient, Doctor, Specialty, AppointmentStatus } = require('../../shared/models');
 const { Op } = require('sequelize');
 
 class AppointmentRepository {
     
-    constructor() {
-        // Obtener los modelos desde sequelize
-        this.getModels = () => {
-            return {
-                Appointment: sequelize.models.appointments,
-                Patient: sequelize.models.patients,
-                Doctor: sequelize.models.doctors,
-                Specialty: sequelize.models.specialties,
-                User: sequelize.models.users
-            };
-        };
-    }
-    
     // Crear una nueva cita
     async createAppointment(appointmentData) {
         try {
-            const { Appointment } = this.getModels();
             const appointment = await Appointment.create(appointmentData);
             return appointment;
         } catch (error) {
@@ -30,7 +16,6 @@ class AppointmentRepository {
     // Buscar cita por ID
     async findById(id) {
         try {
-            const { Appointment, Patient, Doctor, Specialty, User } = this.getModels();
             const appointment = await Appointment.findOne({
                 where: { 
                     id: id,
@@ -40,26 +25,22 @@ class AppointmentRepository {
                     {
                         model: Patient,
                         as: 'patient',
-                        include: [{
-                            model: User,
-                            as: 'user',
-                            attributes: { exclude: ['password'] }
-                        }]
+                        attributes: ['id', 'dni', 'firstName', 'lastName', 'phone']
                     },
                     {
                         model: Doctor,
                         as: 'doctor',
-                        include: [
-                            {
-                                model: User,
-                                as: 'user',
-                                attributes: { exclude: ['password'] }
-                            },
-                            {
-                                model: Specialty,
-                                as: 'specialty'
-                            }
-                        ]
+                        attributes: ['id', 'medicalLicense', 'firstName', 'lastName', 'phone'],
+                        include: [{
+                            model: Specialty,
+                            as: 'specialty',
+                            attributes: ['id', 'name']
+                        }]
+                    },
+                    {
+                        model: AppointmentStatus,
+                        as: 'appointmentStatus',
+                        attributes: ['id', 'name', 'color', 'category']
                     }
                 ]
             });
@@ -74,8 +55,7 @@ class AppointmentRepository {
         try {
             const whereClause = {
                 patientId: patientId,
-                flg_deleted: false,
-                active: true
+                flg_deleted: false
             };
 
             if (filters.status) {
@@ -83,29 +63,33 @@ class AppointmentRepository {
             }
 
             if (filters.dateFrom) {
-                whereClause.appointmentDate = {
-                    [Op.gte]: filters.dateFrom
-                };
+                whereClause.appointmentDate = { [Op.gte]: filters.dateFrom };
             }
 
             if (filters.dateTo) {
-                whereClause.appointmentDate = {
+                whereClause.appointmentDate = { 
                     ...whereClause.appointmentDate,
-                    [Op.lte]: filters.dateTo
+                    [Op.lte]: filters.dateTo 
                 };
             }
 
-            const { Appointment, Doctor, Specialty } = this.getModels();
             const appointments = await Appointment.findAll({
                 where: whereClause,
                 include: [
                     {
                         model: Doctor,
                         as: 'doctor',
+                        attributes: ['id', 'firstName', 'lastName', 'medicalLicense'],
                         include: [{
                             model: Specialty,
-                            as: 'specialty'
+                            as: 'specialty',
+                            attributes: ['name']
                         }]
+                    },
+                    {
+                        model: AppointmentStatus,
+                        as: 'appointmentStatus',
+                        attributes: ['name', 'color', 'category']
                     }
                 ],
                 order: [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC']]
@@ -117,13 +101,12 @@ class AppointmentRepository {
         }
     }
 
-    // Buscar citas por médico
+    // Buscar citas por doctor
     async findByDoctor(doctorId, filters = {}) {
         try {
             const whereClause = {
                 doctorId: doctorId,
-                flg_deleted: false,
-                active: true
+                flg_deleted: false
             };
 
             if (filters.status) {
@@ -140,18 +123,18 @@ class AppointmentRepository {
                 };
             }
 
-            const { Appointment, Patient, User } = this.getModels();
             const appointments = await Appointment.findAll({
                 where: whereClause,
                 include: [
                     {
                         model: Patient,
                         as: 'patient',
-                        include: [{
-                            model: User,
-                            as: 'user',
-                            attributes: { exclude: ['password'] }
-                        }]
+                        attributes: ['id', 'dni', 'firstName', 'lastName', 'phone']
+                    },
+                    {
+                        model: AppointmentStatus,
+                        as: 'appointmentStatus',
+                        attributes: ['name', 'color', 'category']
                     }
                 ],
                 order: [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC']]
@@ -159,37 +142,125 @@ class AppointmentRepository {
             
             return appointments;
         } catch (error) {
-            throw new Error(`Error al buscar citas por médico: ${error.message}`);
+            throw new Error(`Error al buscar citas por doctor: ${error.message}`);
         }
     }
 
-    // Buscar citas por fecha y médico (para verificar disponibilidad)
-    async findByDateAndDoctor(date, doctorId) {
+    // Buscar citas por fecha
+    async findByDate(date, filters = {}) {
         try {
-            const { Appointment } = this.getModels();
+            const whereClause = {
+                appointmentDate: date,
+                flg_deleted: false,
+                active: true
+            };
+
+            if (filters.doctorId) {
+                whereClause.doctorId = filters.doctorId;
+            }
+
+            if (filters.status) {
+                whereClause.status = filters.status;
+            }
+
             const appointments = await Appointment.findAll({
-                where: {
-                    appointmentDate: date,
-                    doctorId: doctorId,
-                    flg_deleted: false,
-                    active: true,
-                    status: {
-                        [Op.notIn]: ['cancelled', 'no_show']
+                where: whereClause,
+                include: [
+                    {
+                        model: Patient,
+                        as: 'patient',
+                        attributes: ['id', 'dni', 'firstName', 'lastName', 'phone']
+                    },
+                    {
+                        model: Doctor,
+                        as: 'doctor',
+                        attributes: ['id', 'firstName', 'lastName', 'medicalLicense'],
+                        include: [{
+                            model: Specialty,
+                            as: 'specialty',
+                            attributes: ['name']
+                        }]
+                    },
+                    {
+                        model: AppointmentStatus,
+                        as: 'appointmentStatus',
+                        attributes: ['name', 'color', 'category']
                     }
-                },
+                ],
                 order: [['appointmentTime', 'ASC']]
             });
             
             return appointments;
         } catch (error) {
-            throw new Error(`Error al buscar citas por fecha y médico: ${error.message}`);
+            throw new Error(`Error al buscar citas por fecha: ${error.message}`);
         }
+    }
+
+    // Verificar disponibilidad de horario
+    async checkAvailability(doctorId, appointmentDate, appointmentTime, duration = 30, excludeId = null) {
+        try {
+            const whereClause = {
+                doctorId: doctorId,
+                appointmentDate: appointmentDate,
+                status: { [Op.notIn]: ['cancelled', 'no_show'] },
+                flg_deleted: false
+            };
+
+            if (excludeId) {
+                whereClause.id = { [Op.ne]: excludeId };
+            }
+
+            // Calcular rango de tiempo con duración
+            const startTime = appointmentTime;
+            const endTime = this.addMinutes(appointmentTime, duration);
+
+            const conflictingAppointments = await Appointment.findAll({
+                where: {
+                    ...whereClause,
+                    [Op.or]: [
+                        // Nueva cita comienza durante una cita existente
+                        {
+                            appointmentTime: { [Op.lte]: startTime },
+                            [Op.and]: [
+                                Appointment.sequelize.literal(`ADDTIME(appointment_time, SEC_TO_TIME(duration * 60)) > '${startTime}'`)
+                            ]
+                        },
+                        // Nueva cita termina durante una cita existente
+                        {
+                            appointmentTime: { [Op.lt]: endTime },
+                            [Op.and]: [
+                                Appointment.sequelize.literal(`ADDTIME(appointment_time, SEC_TO_TIME(duration * 60)) > '${appointmentTime}'`)
+                            ]
+                        },
+                        // Nueva cita engloba una cita existente
+                        {
+                            appointmentTime: { [Op.gte]: startTime },
+                            [Op.and]: [
+                                Appointment.sequelize.literal(`ADDTIME(appointment_time, SEC_TO_TIME(duration * 60)) <= '${endTime}'`)
+                            ]
+                        }
+                    ]
+                }
+            });
+
+            return conflictingAppointments.length === 0;
+        } catch (error) {
+            throw new Error(`Error al verificar disponibilidad: ${error.message}`);
+        }
+    }
+
+    // Helper para agregar minutos a una hora
+    addMinutes(time, minutes) {
+        const [hours, mins] = time.split(':').map(Number);
+        const totalMinutes = hours * 60 + mins + minutes;
+        const newHours = Math.floor(totalMinutes / 60) % 24;
+        const newMins = totalMinutes % 60;
+        return `${String(newHours).padStart(2, '0')}:${String(newMins).padStart(2, '0')}:00`;
     }
 
     // Actualizar cita
     async updateAppointment(appointmentId, appointmentData) {
         try {
-            const { Appointment } = this.getModels();
             const [updatedRows] = await Appointment.update(
                 appointmentData,
                 { 
@@ -207,27 +278,18 @@ class AppointmentRepository {
     }
 
     // Cancelar cita
-    async cancelAppointment(appointmentId, cancelledBy, reason = null) {
+    async cancelAppointment(appointmentId, cancelReason, cancelledBy) {
         try {
-            const updateData = { 
-                status: 'cancelled',
-                user_updated: cancelledBy
-            };
-
-            if (reason) {
-                updateData.notes = reason ? `Cancelada: ${reason}` : 'Cancelada';
-            }
-
-            const { Appointment } = this.getModels();
             const [updatedRows] = await Appointment.update(
-                updateData,
+                { 
+                    status: 'cancelled',
+                    cancelReason: cancelReason,
+                    user_updated: cancelledBy
+                },
                 { 
                     where: { 
                         id: appointmentId,
-                        flg_deleted: false,
-                        status: {
-                            [Op.notIn]: ['completed', 'cancelled']
-                        }
+                        flg_deleted: false
                     }
                 }
             );
@@ -241,7 +303,6 @@ class AppointmentRepository {
     // Confirmar cita
     async confirmAppointment(appointmentId, confirmedBy) {
         try {
-            const { Appointment } = this.getModels();
             const [updatedRows] = await Appointment.update(
                 { 
                     status: 'confirmed',
@@ -263,27 +324,18 @@ class AppointmentRepository {
     }
 
     // Marcar cita como completada
-    async completeAppointment(appointmentId, completedBy, notes = null) {
+    async completeAppointment(appointmentId, completedBy) {
         try {
-            const updateData = { 
-                status: 'completed',
-                user_updated: completedBy
-            };
-
-            if (notes) {
-                updateData.notes = notes;
-            }
-
-            const { Appointment } = this.getModels();
             const [updatedRows] = await Appointment.update(
-                updateData,
+                { 
+                    status: 'completed',
+                    user_updated: completedBy
+                },
                 { 
                     where: { 
                         id: appointmentId,
                         flg_deleted: false,
-                        status: {
-                            [Op.in]: ['confirmed', 'in_progress']
-                        }
+                        status: { [Op.in]: ['confirmed', 'in_progress'] }
                     }
                 }
             );
@@ -300,21 +352,20 @@ class AppointmentRepository {
             const offset = (page - 1) * limit;
             
             const whereClause = {
-                flg_deleted: false,
-                active: true
+                flg_deleted: false
             };
 
             // Aplicar filtros
-            if (filters.status) {
-                whereClause.status = filters.status;
+            if (filters.patientId) {
+                whereClause.patientId = filters.patientId;
             }
 
             if (filters.doctorId) {
                 whereClause.doctorId = filters.doctorId;
             }
 
-            if (filters.patientId) {
-                whereClause.patientId = filters.patientId;
+            if (filters.status) {
+                whereClause.status = filters.status;
             }
 
             if (filters.dateFrom && filters.dateTo) {
@@ -324,40 +375,34 @@ class AppointmentRepository {
             }
 
             if (filters.search) {
-                // Buscar en reason o notes
                 whereClause[Op.or] = [
                     { reason: { [Op.like]: `%${filters.search}%` } },
                     { notes: { [Op.like]: `%${filters.search}%` } }
                 ];
             }
 
-            const { Appointment, Patient, Doctor, Specialty, User } = this.getModels();
             const { count, rows } = await Appointment.findAndCountAll({
                 where: whereClause,
                 include: [
                     {
                         model: Patient,
                         as: 'patient',
-                        include: [{
-                            model: User,
-                            as: 'user',
-                            attributes: { exclude: ['password'] }
-                        }]
+                        attributes: ['id', 'dni', 'firstName', 'lastName', 'phone']
                     },
                     {
                         model: Doctor,
                         as: 'doctor',
-                        include: [
-                            {
-                                model: User,
-                                as: 'user',
-                                attributes: { exclude: ['password'] }
-                            },
-                            {
-                                model: Specialty,
-                                as: 'specialty'
-                            }
-                        ]
+                        attributes: ['id', 'firstName', 'lastName', 'medicalLicense'],
+                        include: [{
+                            model: Specialty,
+                            as: 'specialty',
+                            attributes: ['name']
+                        }]
+                    },
+                    {
+                        model: AppointmentStatus,
+                        as: 'appointmentStatus',
+                        attributes: ['name', 'color', 'category']
                     }
                 ],
                 order: [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC']],
@@ -379,114 +424,81 @@ class AppointmentRepository {
         }
     }
 
-    // Verificar conflictos de horario
-    async checkTimeConflict(doctorId, date, startTime, endTime, excludeAppointmentId = null) {
-        try {
-            const whereClause = {
-                doctorId: doctorId,
-                appointmentDate: date,
-                flg_deleted: false,
-                active: true,
-                status: {
-                    [Op.notIn]: ['cancelled', 'no_show']
-                }
-            };
-
-            if (excludeAppointmentId) {
-                whereClause.id = { [Op.ne]: excludeAppointmentId };
-            }
-
-            const { Appointment } = this.getModels();
-            const conflictingAppointments = await Appointment.findAll({
-                where: whereClause
-            });
-
-            // Verificar conflictos manualmente
-            for (const appointment of conflictingAppointments) {
-                const appointmentStart = appointment.appointmentTime;
-                const appointmentEnd = this.calculateEndTime(appointmentStart, appointment.estimatedDuration || 30);
-                
-                if (this.timeOverlaps(startTime, endTime, appointmentStart, appointmentEnd)) {
-                    return true;
-                }
-            }
-
-            return false;
-        } catch (error) {
-            throw new Error(`Error al verificar conflictos de horario: ${error.message}`);
-        }
-    }
-
-    // Función auxiliar para calcular hora de fin
-    calculateEndTime(startTime, durationMinutes) {
-        const [hours, minutes] = startTime.split(':').map(Number);
-        const startMinutes = hours * 60 + minutes;
-        const endMinutes = startMinutes + durationMinutes;
-        const endHours = Math.floor(endMinutes / 60);
-        const endMins = endMinutes % 60;
-        return `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
-    }
-
-    // Función auxiliar para verificar solapamiento de horarios
-    timeOverlaps(start1, end1, start2, end2) {
-        return start1 < end2 && end1 > start2;
-    }
-
     // Obtener estadísticas de citas
-    async getAppointmentStats() {
+    async getAppointmentStats(filters = {}) {
         try {
-            const { Appointment } = this.getModels();
+            const whereClause = { flg_deleted: false };
             
-            const totalAppointments = await Appointment.count({
-                where: { flg_deleted: false }
-            });
+            if (filters.dateFrom && filters.dateTo) {
+                whereClause.appointmentDate = {
+                    [Op.between]: [filters.dateFrom, filters.dateTo]
+                };
+            }
+
+            if (filters.doctorId) {
+                whereClause.doctorId = filters.doctorId;
+            }
+
+            const totalAppointments = await Appointment.count({ where: whereClause });
 
             const appointmentsByStatus = await Appointment.findAll({
                 attributes: [
                     'status',
                     [Appointment.sequelize.fn('COUNT', Appointment.sequelize.col('id')), 'count']
                 ],
-                where: { 
-                    flg_deleted: false,
-                    active: true
-                },
-                group: ['status'],
-                raw: true
+                where: whereClause,
+                group: ['status']
             });
 
-            const todaysAppointments = await Appointment.count({
+            const appointmentsByDoctor = await Appointment.findAll({
+                attributes: [
+                    'doctorId',
+                    [Appointment.sequelize.fn('COUNT', Appointment.sequelize.col('Appointment.id')), 'count']
+                ],
+                where: whereClause,
+                include: [{
+                    model: Doctor,
+                    as: 'doctor',
+                    attributes: ['firstName', 'lastName'],
+                    include: [{
+                        model: Specialty,
+                        as: 'specialty',
+                        attributes: ['name']
+                    }]
+                }],
+                group: ['doctorId', 'doctor.id', 'doctor->specialty.id']
+            });
+
+            const upcomingAppointments = await Appointment.count({
                 where: {
-                    appointmentDate: new Date().toISOString().split('T')[0],
-                    flg_deleted: false,
-                    active: true
+                    ...whereClause,
+                    appointmentDate: { [Op.gte]: new Date() },
+                    status: { [Op.in]: ['scheduled', 'confirmed'] }
                 }
             });
 
             return {
                 total: totalAppointments,
+                upcoming: upcomingAppointments,
                 byStatus: appointmentsByStatus,
-                today: todaysAppointments
+                byDoctor: appointmentsByDoctor
             };
         } catch (error) {
             throw new Error(`Error al obtener estadísticas de citas: ${error.message}`);
         }
     }
 
-    // Buscar citas próximas (para notificaciones)
-    async findUpcomingAppointments(hoursAhead = 24) {
+    // Obtener citas pendientes de recordatorio
+    async findPendingReminders() {
         try {
-            const now = new Date();
-            const today = now.toISOString().split('T')[0];
-
-            const { Appointment, Patient, Doctor, User } = this.getModels();
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
             const appointments = await Appointment.findAll({
                 where: {
-                    appointmentDate: {
-                        [Op.gte]: today
-                    },
-                    status: {
-                        [Op.in]: ['scheduled', 'confirmed']
-                    },
+                    appointmentDate: tomorrow.toISOString().split('T')[0],
+                    status: { [Op.in]: ['scheduled', 'confirmed'] },
+                    reminderSent: false,
                     flg_deleted: false,
                     active: true
                 },
@@ -494,29 +506,180 @@ class AppointmentRepository {
                     {
                         model: Patient,
                         as: 'patient',
-                        include: [{
-                            model: User,
-                            as: 'user',
-                            attributes: { exclude: ['password'] }
-                        }]
+                        attributes: ['id', 'firstName', 'lastName', 'phone']
                     },
                     {
                         model: Doctor,
                         as: 'doctor',
+                        attributes: ['firstName', 'lastName'],
                         include: [{
-                            model: User,
-                            as: 'user',
-                            attributes: { exclude: ['password'] }
+                            model: Specialty,
+                            as: 'specialty',
+                            attributes: ['name']
                         }]
                     }
-                ],
-                order: [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC']]
+                ]
             });
 
             return appointments;
         } catch (error) {
-            throw new Error(`Error al buscar citas próximas: ${error.message}`);
+            throw new Error(`Error al buscar citas pendientes de recordatorio: ${error.message}`);
         }
+    }
+
+    // Marcar recordatorio como enviado
+    async markReminderSent(appointmentId) {
+        try {
+            const [updatedRows] = await Appointment.update(
+                { reminderSent: true },
+                { 
+                    where: { 
+                        id: appointmentId,
+                        flg_deleted: false
+                    }
+                }
+            );
+            
+            return updatedRows > 0;
+        } catch (error) {
+            throw new Error(`Error al marcar recordatorio como enviado: ${error.message}`);
+        }
+    }
+
+    // Soft delete de cita
+    async deleteAppointment(appointmentId, deletedBy) {
+        try {
+            const [updatedRows] = await Appointment.update(
+                { 
+                    active: false,
+                    flg_deleted: true,
+                    deleted_at: new Date(),
+                    user_deleted: deletedBy
+                },
+                { 
+                    where: { 
+                        id: appointmentId,
+                        flg_deleted: false
+                    }
+                }
+            );
+            
+            return updatedRows > 0;
+        } catch (error) {
+            throw new Error(`Error al eliminar cita: ${error.message}`);
+        }
+    }
+
+    // Reprogramar cita
+    async rescheduleAppointment(appointmentId, newDate, newTime, rescheduledBy) {
+        try {
+            const [updatedRows] = await Appointment.update(
+                { 
+                    appointmentDate: newDate,
+                    appointmentTime: newTime,
+                    status: 'scheduled',
+                    reminderSent: false,
+                    user_updated: rescheduledBy
+                },
+                { 
+                    where: { 
+                        id: appointmentId,
+                        flg_deleted: false
+                    }
+                }
+            );
+            
+            return updatedRows > 0;
+        } catch (error) {
+            throw new Error(`Error al reprogramar cita: ${error.message}`);
+        }
+    }
+
+    // Buscar slots disponibles
+    async findAvailableSlots(doctorId, date, duration = 30) {
+        try {
+            // Obtener horario del doctor para el día de la semana
+            const dayOfWeek = new Date(date).getDay();
+            
+            const schedule = await Schedule.findOne({
+                where: {
+                    doctorId: doctorId,
+                    dayOfWeek: dayOfWeek,
+                    isAvailable: true,
+                    flg_deleted: false,
+                    active: true
+                }
+            });
+
+            if (!schedule) {
+                return [];
+            }
+
+            // Obtener citas existentes para ese día
+            const existingAppointments = await this.findByDate(date, { doctorId });
+
+            // Generar slots disponibles
+            const availableSlots = this.generateTimeSlots(
+                schedule.startTime,
+                schedule.endTime,
+                schedule.breakStart,
+                schedule.breakEnd,
+                schedule.slotDuration || duration,
+                existingAppointments
+            );
+
+            return availableSlots;
+        } catch (error) {
+            throw new Error(`Error al buscar slots disponibles: ${error.message}`);
+        }
+    }
+
+    // Helper para generar slots de tiempo
+    generateTimeSlots(startTime, endTime, breakStart, breakEnd, slotDuration, existingAppointments) {
+        const slots = [];
+        const start = this.timeToMinutes(startTime);
+        const end = this.timeToMinutes(endTime);
+        const breakStartMinutes = breakStart ? this.timeToMinutes(breakStart) : null;
+        const breakEndMinutes = breakEnd ? this.timeToMinutes(breakEnd) : null;
+
+        for (let current = start; current < end; current += slotDuration) {
+            const slotTime = this.minutesToTime(current);
+            
+            // Verificar si está en horario de break
+            if (breakStartMinutes && breakEndMinutes && 
+                current >= breakStartMinutes && current < breakEndMinutes) {
+                continue;
+            }
+
+            // Verificar si hay conflicto con citas existentes
+            const hasConflict = existingAppointments.some(appointment => {
+                const appointmentStart = this.timeToMinutes(appointment.appointmentTime);
+                const appointmentEnd = appointmentStart + (appointment.duration || 30);
+                return current < appointmentEnd && (current + slotDuration) > appointmentStart;
+            });
+
+            if (!hasConflict) {
+                slots.push({
+                    time: slotTime,
+                    available: true
+                });
+            }
+        }
+
+        return slots;
+    }
+
+    // Helper para convertir tiempo a minutos
+    timeToMinutes(time) {
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours * 60 + minutes;
+    }
+
+    // Helper para convertir minutos a tiempo
+    minutesToTime(minutes) {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:00`;
     }
 }
 

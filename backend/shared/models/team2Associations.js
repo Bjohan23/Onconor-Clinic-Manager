@@ -1,71 +1,18 @@
-const User = require('../../users/models/user');
 const Patient = require('../../patients/models/patient');
 const Doctor = require('../../doctors/models/doctor');
-const Specialty = require('../../specialties/models/specialty');
 const Appointment = require('../../appointments/models/appointment');
 const Schedule = require('../../schedules/models/schedule');
 const AppointmentStatus = require('../../appointment-statuses/models/appointmentStatus');
 
-const setupAssociations = () => {
+const setupTeam2Associations = () => {
     try {
         // Obtener instancias de los modelos
-        const UserModel = User();
         const PatientModel = Patient();
         const DoctorModel = Doctor();
-        const SpecialtyModel = Specialty();
         const AppointmentModel = Appointment();
         const ScheduleModel = Schedule();
         const AppointmentStatusModel = AppointmentStatus();
 
-        // ========== ASOCIACIONES EQUIPO 1 ==========
-        
-        // User -> Patient (1:1)
-        UserModel.hasOne(PatientModel, {
-            foreignKey: 'user_id',
-            as: 'patient',
-            onDelete: 'CASCADE',
-            onUpdate: 'CASCADE'
-        });
-
-        PatientModel.belongsTo(UserModel, {
-            foreignKey: 'user_id',
-            as: 'user',
-            onDelete: 'CASCADE',
-            onUpdate: 'CASCADE'
-        });
-
-        // User -> Doctor (1:1)
-        UserModel.hasOne(DoctorModel, {
-            foreignKey: 'user_id',
-            as: 'doctor',
-            onDelete: 'CASCADE',
-            onUpdate: 'CASCADE'
-        });
-
-        DoctorModel.belongsTo(UserModel, {
-            foreignKey: 'user_id',
-            as: 'user',
-            onDelete: 'CASCADE',
-            onUpdate: 'CASCADE'
-        });
-
-        // Specialty -> Doctor (1:N)
-        SpecialtyModel.hasMany(DoctorModel, {
-            foreignKey: 'specialty_id',
-            as: 'doctors',
-            onDelete: 'RESTRICT',
-            onUpdate: 'CASCADE'
-        });
-
-        DoctorModel.belongsTo(SpecialtyModel, {
-            foreignKey: 'specialty_id',
-            as: 'specialty',
-            onDelete: 'RESTRICT',
-            onUpdate: 'CASCADE'
-        });
-
-        // ========== ASOCIACIONES EQUIPO 2 ==========
-        
         // Patient -> Appointment (1:N)
         PatientModel.hasMany(AppointmentModel, {
             foreignKey: 'patient_id',
@@ -126,45 +73,27 @@ const setupAssociations = () => {
             onUpdate: 'CASCADE'
         });
 
-        // ========== ASOCIACIONES PREPARADAS PARA EQUIPO 3 ==========
-        // Nota: Estas asociaciones se activarán cuando el Equipo 3 implemente sus modelos
-        
-        // Appointment -> MedicalRecord (1:1) - Para el futuro
-        // AppointmentModel.hasOne(MedicalRecordModel, {
-        //     foreignKey: 'appointment_id',
-        //     as: 'medicalRecord',
-        //     onDelete: 'SET NULL',
-        //     onUpdate: 'CASCADE'
-        // });
-
-        console.log('✅ All model associations established successfully');
-        console.log('📊 Team 1 models: User, Patient, Doctor, Specialty');
-        console.log('📊 Team 2 models: Appointment, Schedule, AppointmentStatus');
-        console.log('📊 Ready for Team 3 integration: MedicalRecord, Treatment, etc.');
+        console.log('✅ Team 2 model associations established successfully');
         
         return {
-            User: UserModel,
             Patient: PatientModel,
             Doctor: DoctorModel,
-            Specialty: SpecialtyModel,
             Appointment: AppointmentModel,
             Schedule: ScheduleModel,
             AppointmentStatus: AppointmentStatusModel
         };
 
     } catch (error) {
-        console.error('❌ Error setting up model associations:', error);
+        console.error('❌ Error setting up Team 2 model associations:', error);
         throw error;
     }
 };
 
 module.exports = {
-    setupAssociations,
+    setupTeam2Associations,
     models: {
-        User,
         Patient,
         Doctor,
-        Specialty,
         Appointment,
         Schedule,
         AppointmentStatus
