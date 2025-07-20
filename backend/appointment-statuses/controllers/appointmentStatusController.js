@@ -3,7 +3,7 @@ const { apiResponse } = require('../../shared/helpers/apiResponseHelper');
 
 class AppointmentStatusController {
     
-    // Crear nuevo estado de cita
+    // Crear nuevo estado de citass
     async createAppointmentStatus(req, res) {
         try {
             const statusData = req.body;
