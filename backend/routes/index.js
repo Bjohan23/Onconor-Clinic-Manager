@@ -14,7 +14,6 @@ const prescriptionRoutes = require('../prescription/routes/prescriptionRoutes')
 const medicalExamRoutes = require('../medicalexam/routes/medicalExamRoutes')
 const paymentRoutes = require('../payment/routes/paymentRoutes')
 const medicalRecordRoutes = require('../medicalrecord/routes/medicalRecordRoutes')
-=======
 const appointmentRoutes = require('../appointments/routes/appointmentRoutes') // ← NUEVO
 
 // Middleware de autenticación
