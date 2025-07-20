@@ -51,7 +51,7 @@
    - Doctor association management
    - Cascade delete protection
    - Usage statistics
-
+   
 ### ✅ **Phase 3: Business Logic (Priority: Medium)**
 8. **PatientService** - `backend/patients/services/patientService.js`
    - Data validation (DNI, names, dates, gender)
