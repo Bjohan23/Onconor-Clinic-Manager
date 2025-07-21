@@ -37,9 +37,11 @@ const PaymentsPage = () => {
         itemsPerPage,
         filters
       );
-      setPayments(response.data?.payments || []);
-      setTotalPages(response.data?.pagination?.totalPages || 1);
-      setTotalItems(response.data?.pagination?.total || 0);
+      // El API devuelve directamente un array
+      const payments = Array.isArray(response) ? response : [];
+      setPayments(payments);
+      setTotalPages(1); // Sin paginación real del API
+      setTotalItems(payments.length);
     } catch (err) {
       setError('Error al cargar los pagos');
     } finally {
@@ -66,15 +68,139 @@ const PaymentsPage = () => {
   };
 
   const columns = [
-    { key: 'id', title: 'ID' },
-    { key: 'invoiceId', title: 'Factura' },
-    { key: 'amount', title: 'Monto' },
-    { key: 'method', title: 'Método' },
-    { key: 'status', title: 'Estado' },
-    { key: 'created_at', title: 'Fecha Pago' },
+    { 
+      key: 'id', 
+      title: 'ID',
+      render: (value) => `#${value}`
+    },
+    { 
+      key: 'patient', 
+      title: '👤 Paciente',
+      render: (value, payment) => (
+        <div>
+          <div className="font-semibold" style={{ color: colors.text.primary }}>
+            {payment.invoice?.patient?.fullName || `Factura #${payment.invoiceId}`}
+          </div>
+          {payment.invoice?.patient?.dni && (
+            <div className="text-xs" style={{ color: colors.text.secondary }}>
+              DNI: {payment.invoice.patient.dni}
+            </div>
+          )}
+        </div>
+      )
+    },
+    { 
+      key: 'invoice', 
+      title: '🧾 Factura',
+      render: (value, payment) => (
+        <div>
+          <div className="font-semibold" style={{ color: colors.text.primary }}>
+            Factura #{payment.invoiceId}
+          </div>
+          <div className="text-xs" style={{ color: colors.text.secondary }}>
+            Total: S/ {parseFloat(payment.invoice?.total || 0).toFixed(2)}
+          </div>
+          {payment.invoice?.appointment?.doctor?.fullName && (
+            <div className="text-xs" style={{ color: colors.text.secondary }}>
+              Dr. {payment.invoice.appointment.doctor.fullName}
+            </div>
+          )}
+        </div>
+      )
+    },
+    { 
+      key: 'amount', 
+      title: '💰 Monto Pagado',
+      render: (value) => (
+        <div className="font-semibold text-lg" style={{ color: colors.success?.[600] || colors.secondary?.[600] || '#059669' }}>
+          S/ {parseFloat(value || 0).toFixed(2)}
+        </div>
+      )
+    },
+    { 
+      key: 'paymentMethod', 
+      title: '💳 Método',
+      render: (value) => {
+        const methodConfig = {
+          efectivo: { icon: '💵', text: 'Efectivo' },
+          tarjeta_credito: { icon: '💳', text: 'T. Crédito' },
+          tarjeta_debito: { icon: '💳', text: 'T. Débito' },
+          transferencia: { icon: '🏦', text: 'Transferencia' },
+          yape: { icon: '📱', text: 'Yape' },
+          plin: { icon: '📱', text: 'Plin' }
+        };
+        const config = methodConfig[value] || { icon: '💰', text: value || 'No especificado' };
+        return (
+          <div className="flex items-center gap-1">
+            <span>{config.icon}</span>
+            <span className="font-medium" style={{ color: colors.text.primary }}>
+              {config.text}
+            </span>
+          </div>
+        );
+      }
+    },
+    { 
+      key: 'transactionId', 
+      title: '🏷️ ID Transacción',
+      render: (value) => (
+        <div className="font-mono text-sm" style={{ color: colors.text.primary }}>
+          {value || 'Sin ID'}
+        </div>
+      )
+    },
+    { 
+      key: 'status', 
+      title: '📊 Estado',
+      render: (value) => {
+        const statusConfig = {
+          pending: { color: colors.warning?.[600] || '#d97706', bg: colors.warning?.[50] || '#fffbeb', text: 'Pendiente' },
+          completed: { color: colors.success?.[600] || '#059669', bg: colors.success?.[50] || '#ecfdf5', text: 'Completado' },
+          failed: { color: colors.error?.[600] || '#dc2626', bg: colors.error?.[50] || '#fef2f2', text: 'Fallido' },
+          refunded: { color: colors.gray?.[600] || '#4b5563', bg: colors.gray?.[50] || '#f9fafb', text: 'Reembolsado' }
+        };
+        const config = statusConfig[value] || statusConfig.pending;
+        return (
+          <span 
+            className="px-2 py-1 text-xs font-medium rounded-full"
+            style={{ 
+              color: config.color, 
+              backgroundColor: config.bg 
+            }}
+          >
+            {config.text}
+          </span>
+        );
+      }
+    },
+    { 
+      key: 'paymentDate', 
+      title: '📅 Fecha Pago',
+      render: (value) => {
+        if (!value) return 'No especificada';
+        const date = new Date(value);
+        return (
+          <div>
+            <div className="font-medium" style={{ color: colors.text.primary }}>
+              {date.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+              })}
+            </div>
+            <div className="text-xs" style={{ color: colors.text.secondary }}>
+              {date.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </div>
+          </div>
+        );
+      }
+    },
     {
       key: 'actions',
-      title: 'Acciones',
+      title: '🔧 Acciones',
       render: (_, payment) => (
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => navigate(`/payments/edit/${payment.id}`)}>
@@ -169,14 +295,14 @@ const PaymentsPage = () => {
       {error && (
         <Card variant="critical">
           <div className="flex items-start">
-            <svg className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" style={{ color: colors.error[500] }} fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" style={{ color: colors.error?.[500] || '#ef4444' }} fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
             <div className="flex-1">
-              <h3 className="font-medium" style={{ color: colors.error[700] }}>
+              <h3 className="font-medium" style={{ color: colors.error?.[700] || '#b91c1c' }}>
                 Error al cargar pagos
               </h3>
-              <p className="text-sm mt-1" style={{ color: colors.error[600] }}>
+              <p className="text-sm mt-1" style={{ color: colors.error?.[600] || '#dc2626' }}>
                 {error}
               </p>
               <div className="mt-3 flex space-x-2">

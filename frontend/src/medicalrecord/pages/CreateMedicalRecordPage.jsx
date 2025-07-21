@@ -8,6 +8,7 @@ import { Input, TextArea } from '../../shared/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '../../shared/components/ui/Card';
 import { patientService } from '../../patients/services/patientService';
 import { doctorService } from '../../doctors/services/doctorService';
+import appointmentService from '../../services/appointmentService';
 
 const CreateMedicalRecordPage = () => {
   const { colors } = useTheme();
@@ -19,18 +20,24 @@ const CreateMedicalRecordPage = () => {
   const [formData, setFormData] = useState({
     patientId: '',
     doctorId: '',
+    appointmentId: '', // Campo requerido por el modelo
     diagnosis: '',
-    notes: '',
+    symptoms: '',
+    observations: '',
+    date: '', // Campo requerido por el modelo
   });
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
+  const [appointments, setAppointments] = useState([]);
 
   useEffect(() => {
     async function fetchOptions() {
       const pRes = await patientService.getActivePatients();
       const dRes = await doctorService.getActiveDoctors();
+      const aRes = await appointmentService.getAppointments({}, 1, 100); // Obtener citas
       setPatients(pRes.data?.patients || []);
       setDoctors(dRes.data?.doctors || []);
+      setAppointments(aRes.data?.appointments || []);
     }
     fetchOptions();
   }, []);
@@ -47,7 +54,9 @@ const CreateMedicalRecordPage = () => {
     const newErrors = {};
     if (!formData.patientId) newErrors.patientId = 'El paciente es obligatorio';
     if (!formData.doctorId) newErrors.doctorId = 'El médico es obligatorio';
+    if (!formData.appointmentId) newErrors.appointmentId = 'La cita es obligatoria';
     if (!formData.diagnosis.trim()) newErrors.diagnosis = 'El diagnóstico es obligatorio';
+    if (!formData.date) newErrors.date = 'La fecha es obligatoria';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -58,14 +67,16 @@ const CreateMedicalRecordPage = () => {
     setLoading(true);
     try {
       const response = await medicalRecordService.create(formData);
-      if (response.success) {
+      // El API devuelve directamente el objeto creado si es exitoso
+      if (response && response.id) {
         toast.success('Historial médico creado exitosamente');
         navigate('/medical-records');
       } else {
-        setErrors({ submit: response.message || 'Error al crear el historial médico' });
+        setErrors({ submit: response?.message || 'Error al crear el historial médico' });
       }
     } catch (err) {
-      setErrors({ submit: 'Error de conexión. Inténtalo nuevamente.' });
+      console.error('Error creating medical record:', err);
+      setErrors({ submit: err?.message || 'Error de conexión. Inténtalo nuevamente.' });
     } finally {
       setLoading(false);
     }
@@ -107,45 +118,141 @@ const CreateMedicalRecordPage = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <select
-                name="patientId"
-                value={formData.patientId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona un paciente</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>{p.fullName || `${p.firstName} ${p.lastName}`}</option>
-                ))}
-              </select>
-              <select
-                name="doctorId"
-                value={formData.doctorId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona un médico</option>
-                {doctors.map((d) => (
-                  <option key={d.id} value={d.id}>{d.fullName || `${d.firstName} ${d.lastName}`}</option>
-                ))}
-              </select>
+              {/* Paciente */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  👤 Paciente *
+                </label>
+                <select
+                  name="patientId"
+                  value={formData.patientId}
+                  onChange={handleChange}
+                  required
+                  className="input-modern w-full p-2 border rounded-lg" 
+                  style={{ 
+                    backgroundColor: colors.background.primary, 
+                    borderColor: errors.patientId ? colors.error[400] : colors.border.light,
+                    color: colors.text.primary
+                  }}
+                >
+                  <option value="">Selecciona un paciente</option>
+                  {patients.map((p) => (
+                    <option key={p.id} value={p.id}>{p.fullName || `${p.firstName} ${p.lastName}`}</option>
+                  ))}
+                </select>
+                {errors.patientId && (
+                  <p className="text-sm mt-1" style={{ color: colors.error[600] }}>
+                    {errors.patientId}
+                  </p>
+                )}
+              </div>
+
+              {/* Médico */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  👨‍⚕️ Médico *
+                </label>
+                <select
+                  name="doctorId"
+                  value={formData.doctorId}
+                  onChange={handleChange}
+                  required
+                  className="input-modern w-full p-2 border rounded-lg"
+                  style={{ 
+                    backgroundColor: colors.background.primary, 
+                    borderColor: errors.doctorId ? colors.error[400] : colors.border.light,
+                    color: colors.text.primary
+                  }}
+                >
+                  <option value="">Selecciona un médico</option>
+                  {doctors.map((d) => (
+                    <option key={d.id} value={d.id}>{d.fullName || `${d.firstName} ${d.lastName}`}</option>
+                  ))}
+                </select>
+                {errors.doctorId && (
+                  <p className="text-sm mt-1" style={{ color: colors.error[600] }}>
+                    {errors.doctorId}
+                  </p>
+                )}
+              </div>
+
+              {/* Cita Médica */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  📅 Cita Médica *
+                </label>
+                <select
+                  name="appointmentId"
+                  value={formData.appointmentId}
+                  onChange={handleChange}
+                  required
+                  className="input-modern w-full p-2 border rounded-lg"
+                  style={{ 
+                    backgroundColor: colors.background.primary, 
+                    borderColor: errors.appointmentId ? colors.error[400] : colors.border.light,
+                    color: colors.text.primary
+                  }}
+                >
+                  <option value="">Selecciona una cita</option>
+                  {appointments.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {`Cita #${a.id} - ${new Date(a.appointmentDate).toLocaleDateString('es-ES')} ${new Date(a.appointmentDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`}
+                    </option>
+                  ))}
+                </select>
+                {errors.appointmentId && (
+                  <p className="text-sm mt-1" style={{ color: colors.error[600] }}>
+                    {errors.appointmentId}
+                  </p>
+                )}
+              </div>
+
+              {/* Fecha del Historial */}
               <Input
-                label="Diagnóstico"
-                name="diagnosis"
-                type="text"
+                label="📅 Fecha del Historial"
+                name="date"
+                type="datetime-local"
                 required
-                value={formData.diagnosis}
+                value={formData.date}
                 onChange={handleChange}
-                error={errors.diagnosis}
+                error={errors.date}
               />
-              <TextArea
-                label="Notas"
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-              />
+
+              {/* Diagnóstico */}
+              <div className="md:col-span-2">
+                <Input
+                  label="📝 Diagnóstico"
+                  name="diagnosis"
+                  type="text"
+                  required
+                  value={formData.diagnosis}
+                  onChange={handleChange}
+                  error={errors.diagnosis}
+                  placeholder="Ingrese el diagnóstico..."
+                />
+              </div>
+
+              {/* Síntomas */}
+              <div className="md:col-span-2">
+                <TextArea
+                  label="🩺 Síntomas"
+                  name="symptoms"
+                  value={formData.symptoms}
+                  onChange={handleChange}
+                  placeholder="Descripción de los síntomas presentados..."
+                />
+              </div>
+
+              {/* Observaciones */}
+              <div className="md:col-span-2">
+                <TextArea
+                  label="🔍 Observaciones"
+                  name="observations"
+                  value={formData.observations}
+                  onChange={handleChange}
+                  placeholder="Observaciones adicionales del médico..."
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

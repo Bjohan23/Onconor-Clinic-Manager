@@ -7,7 +7,6 @@ import { Button } from '../../shared/components/ui/Button';
 import { Input, TextArea } from '../../shared/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '../../shared/components/ui/Card';
 import { LoadingSpinner } from '../../shared/components/LoadingSpinner';
-import { invoiceService } from '../../invoice/services/invoiceService';
 
 const EditPaymentPage = () => {
   const { colors } = useTheme();
@@ -20,45 +19,36 @@ const EditPaymentPage = () => {
   const [errors, setErrors] = useState({});
   const [payment, setPayment] = useState(null);
   const [formData, setFormData] = useState({
-    invoiceId: '',
     amount: '',
-    method: '',
+    paymentMethod: '',
+    paymentDate: '',
+    transactionId: '',
     status: '',
-    notes: '',
   });
-  const [invoices, setInvoices] = useState([]);
-
   useEffect(() => {
     if (id) fetchPayment();
   }, [id]);
-
-  useEffect(() => {
-    async function fetchOptions() {
-      const iRes = await invoiceService.getAll();
-      setInvoices(iRes.data?.invoices || []);
-    }
-    fetchOptions();
-  }, []);
 
   const fetchPayment = async () => {
     try {
       setLoadingPayment(true);
       const response = await paymentService.getById(id);
-      if (response.success) {
-        const data = response.data?.payment;
-        setPayment(data);
+      // El API devuelve directamente el objeto de payment
+      if (response && response.id) {
+        setPayment(response);
         setFormData({
-          invoiceId: data.invoiceId || '',
-          amount: data.amount || '',
-          method: data.method || '',
-          status: data.status || '',
-          notes: data.notes || '',
+          amount: response.amount || '',
+          paymentMethod: response.paymentMethod || '',
+          paymentDate: response.paymentDate ? response.paymentDate.slice(0, 16) : '', // Formato datetime-local
+          transactionId: response.transactionId || '',
+          status: response.status || '',
         });
       } else {
-        toast.error(response.message || 'Error al cargar el pago');
+        toast.error('Error al cargar el pago');
         navigate('/payments');
       }
     } catch (err) {
+      console.error('Error fetching payment:', err);
       toast.error('Error de conexión al cargar el pago');
       navigate('/payments');
     } finally {
@@ -76,9 +66,8 @@ const EditPaymentPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.invoiceId) newErrors.invoiceId = 'La factura es obligatoria';
     if (!formData.amount || isNaN(formData.amount) || Number(formData.amount) <= 0) newErrors.amount = 'El monto debe ser mayor a 0';
-    if (!formData.method) newErrors.method = 'El método de pago es obligatorio';
+    if (!formData.paymentMethod) newErrors.paymentMethod = 'El método de pago es obligatorio';
     if (!formData.status) newErrors.status = 'El estado es obligatorio';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -90,14 +79,16 @@ const EditPaymentPage = () => {
     setLoading(true);
     try {
       const response = await paymentService.update(id, formData);
-      if (response.success) {
+      // El API devuelve directamente el objeto actualizado si es exitoso
+      if (response && response.id) {
         toast.success('Pago actualizado exitosamente');
         navigate('/payments');
       } else {
         setErrors({ submit: response.message || 'Error al actualizar el pago' });
       }
     } catch (err) {
-      setErrors({ submit: 'Error de conexión. Inténtalo nuevamente.' });
+      console.error('Error updating payment:', err);
+      setErrors({ submit: err?.message || 'Error de conexión. Inténtalo nuevamente.' });
     } finally {
       setLoading(false);
     }
@@ -147,10 +138,10 @@ const EditPaymentPage = () => {
           <Card variant="critical">
             <div className="flex items-center">
               <div>
-                <h3 className="font-medium" style={{ color: colors.error[700] }}>
+                <h3 className="font-medium" style={{ color: colors.error?.[700] || '#b91c1c' }}>
                   Error al actualizar pago
                 </h3>
-                <p className="text-sm" style={{ color: colors.error[600] }}>
+                <p className="text-sm" style={{ color: colors.error?.[600] || '#dc2626' }}>
                   {errors.submit}
                 </p>
               </div>
@@ -163,51 +154,153 @@ const EditPaymentPage = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <select
-                name="invoiceId"
-                value={formData.invoiceId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona una factura</option>
-                {invoices.map((inv) => (
-                  <option key={inv.id} value={inv.id}>{inv.description || `Factura #${inv.id}`}</option>
-                ))}
-              </select>
+              {/* Información del paciente (solo lectura) */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  👤 Paciente
+                </label>
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: colors.background.secondary, 
+                  borderColor: colors.border.light 
+                }}>
+                  <div className="font-semibold" style={{ color: colors.text.primary }}>
+                    {payment?.invoice?.patient?.fullName || `Factura #${payment?.invoiceId}`}
+                  </div>
+                  {payment?.invoice?.patient?.dni && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      DNI: {payment.invoice.patient.dni}
+                    </div>
+                  )}
+                  {payment?.invoice?.patient?.phone && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      Teléfono: {payment.invoice.patient.phone}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Información de la factura (solo lectura) */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  🧾 Factura
+                </label>
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: colors.background.secondary, 
+                  borderColor: colors.border.light 
+                }}>
+                  <div className="font-semibold" style={{ color: colors.text.primary }}>
+                    Factura #{payment?.invoiceId}
+                  </div>
+                  <div className="text-sm" style={{ color: colors.text.secondary }}>
+                    Total: S/ {parseFloat(payment?.invoice?.total || 0).toFixed(2)}
+                  </div>
+                  {payment?.invoice?.appointment?.doctor?.fullName && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      Dr. {payment.invoice.appointment.doctor.fullName}
+                    </div>
+                  )}
+                  {payment?.invoice?.appointment?.doctor?.specialty?.name && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      {payment.invoice.appointment.doctor.specialty.name}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Monto (editable) */}
               <Input
-                label="Monto"
+                label="💰 Monto Pagado"
                 name="amount"
                 type="number"
+                step="0.01"
+                min="0"
                 required
                 value={formData.amount}
                 onChange={handleChange}
                 error={errors.amount}
+                placeholder="0.00"
               />
+
+              {/* Método de Pago (editable) */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  💳 Método de Pago *
+                </label>
+                <select
+                  name="paymentMethod"
+                  value={formData.paymentMethod}
+                  onChange={handleChange}
+                  required
+                  className="w-full p-2 border rounded-lg" 
+                  style={{ 
+                    backgroundColor: colors.background.primary, 
+                    borderColor: errors.paymentMethod ? (colors.error?.[400] || '#fca5a5') : colors.border.light,
+                    color: colors.text.primary
+                  }}
+                >
+                  <option value="">Selecciona un método</option>
+                  <option value="efectivo">💵 Efectivo</option>
+                  <option value="tarjeta_credito">💳 Tarjeta de Crédito</option>
+                  <option value="tarjeta_debito">💳 Tarjeta de Débito</option>
+                  <option value="transferencia">🏦 Transferencia Bancaria</option>
+                  <option value="yape">📱 Yape</option>
+                  <option value="plin">📱 Plin</option>
+                </select>
+                {errors.paymentMethod && (
+                  <p className="text-sm mt-1" style={{ color: colors.error?.[600] || '#dc2626' }}>
+                    {errors.paymentMethod}
+                  </p>
+                )}
+              </div>
+
+              {/* Fecha de Pago (editable) */}
               <Input
-                label="Método de Pago"
-                name="method"
-                type="text"
-                required
-                value={formData.method}
+                label="📅 Fecha de Pago"
+                name="paymentDate"
+                type="datetime-local"
+                value={formData.paymentDate}
                 onChange={handleChange}
-                error={errors.method}
               />
+
+              {/* ID de Transacción (editable) */}
               <Input
-                label="Estado"
-                name="status"
+                label="🏷️ ID de Transacción"
+                name="transactionId"
                 type="text"
-                required
-                value={formData.status}
+                value={formData.transactionId}
                 onChange={handleChange}
-                error={errors.status}
+                placeholder="CASH-001, VISA-1234, etc."
               />
-              <TextArea
-                label="Notas"
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-              />
+
+              {/* Estado (editable) */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  📊 Estado *
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  required
+                  className="w-full p-2 border rounded-lg" 
+                  style={{ 
+                    backgroundColor: colors.background.primary, 
+                    borderColor: errors.status ? (colors.error?.[400] || '#fca5a5') : colors.border.light,
+                    color: colors.text.primary
+                  }}
+                >
+                  <option value="">Selecciona un estado</option>
+                  <option value="pending">Pendiente</option>
+                  <option value="completed">Completado</option>
+                  <option value="failed">Fallido</option>
+                  <option value="refunded">Reembolsado</option>
+                </select>
+                {errors.status && (
+                  <p className="text-sm mt-1" style={{ color: colors.error?.[600] || '#dc2626' }}>
+                    {errors.status}
+                  </p>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>

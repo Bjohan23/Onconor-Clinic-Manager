@@ -18,9 +18,10 @@ const CreatePaymentPage = () => {
   const [formData, setFormData] = useState({
     invoiceId: '',
     amount: '',
-    method: '',
+    paymentMethod: '',
+    paymentDate: '',
+    transactionId: '',
     status: '',
-    notes: '',
   });
   const [invoices, setInvoices] = useState([]);
 
@@ -44,7 +45,8 @@ const CreatePaymentPage = () => {
     const newErrors = {};
     if (!formData.invoiceId) newErrors.invoiceId = 'La factura es obligatoria';
     if (!formData.amount || isNaN(formData.amount) || Number(formData.amount) <= 0) newErrors.amount = 'El monto debe ser mayor a 0';
-    if (!formData.method) newErrors.method = 'El método de pago es obligatorio';
+    if (!formData.paymentMethod) newErrors.paymentMethod = 'El método de pago es obligatorio';
+    if (!formData.paymentDate) newErrors.paymentDate = 'La fecha de pago es obligatoria';
     if (!formData.status) newErrors.status = 'El estado es obligatorio';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -56,14 +58,16 @@ const CreatePaymentPage = () => {
     setLoading(true);
     try {
       const response = await paymentService.create(formData);
-      if (response.success) {
+      // El API devuelve directamente el objeto creado si es exitoso
+      if (response && response.id) {
         toast.success('Pago registrado exitosamente');
         navigate('/payments');
       } else {
         setErrors({ submit: response.message || 'Error al registrar el pago' });
       }
     } catch (err) {
-      setErrors({ submit: 'Error de conexión. Inténtalo nuevamente.' });
+      console.error('Error creating payment:', err);
+      setErrors({ submit: err?.message || 'Error de conexión. Inténtalo nuevamente.' });
     } finally {
       setLoading(false);
     }
@@ -89,10 +93,10 @@ const CreatePaymentPage = () => {
           <Card variant="critical">
             <div className="flex items-center">
               <div>
-                <h3 className="font-medium" style={{ color: colors.error[700] }}>
+                <h3 className="font-medium" style={{ color: colors.error?.[700] || '#b91c1c' }}>
                   Error al registrar pago
                 </h3>
-                <p className="text-sm" style={{ color: colors.error[600] }}>
+                <p className="text-sm" style={{ color: colors.error?.[600] || '#dc2626' }}>
                   {errors.submit}
                 </p>
               </div>
@@ -105,51 +109,133 @@ const CreatePaymentPage = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <select
-                name="invoiceId"
-                value={formData.invoiceId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona una factura</option>
-                {invoices.map((inv) => (
-                  <option key={inv.id} value={inv.id}>{inv.description || `Factura #${inv.id}`}</option>
-                ))}
-              </select>
+              {/* Factura */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  🧾 Factura *
+                </label>
+                <select
+                  name="invoiceId"
+                  value={formData.invoiceId}
+                  onChange={handleChange}
+                  required
+                  className="w-full p-2 border rounded-lg" 
+                  style={{ 
+                    backgroundColor: colors.background.primary, 
+                    borderColor: errors.invoiceId ? (colors.error?.[400] || '#fca5a5') : colors.border.light,
+                    color: colors.text.primary
+                  }}
+                >
+                  <option value="">Selecciona una factura</option>
+                  {invoices.map((inv) => (
+                    <option key={inv.id} value={inv.id}>
+                      Factura #{inv.id} - S/ {parseFloat(inv.total || 0).toFixed(2)}
+                    </option>
+                  ))}
+                </select>
+                {errors.invoiceId && (
+                  <p className="text-sm mt-1" style={{ color: colors.error?.[600] || '#dc2626' }}>
+                    {errors.invoiceId}
+                  </p>
+                )}
+              </div>
+
+              {/* Monto */}
               <Input
-                label="Monto"
+                label="💰 Monto"
                 name="amount"
                 type="number"
+                step="0.01"
+                min="0"
                 required
                 value={formData.amount}
                 onChange={handleChange}
                 error={errors.amount}
+                placeholder="0.00"
               />
+
+              {/* Método de Pago */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  💳 Método de Pago *
+                </label>
+                <select
+                  name="paymentMethod"
+                  value={formData.paymentMethod}
+                  onChange={handleChange}
+                  required
+                  className="w-full p-2 border rounded-lg" 
+                  style={{ 
+                    backgroundColor: colors.background.primary, 
+                    borderColor: errors.paymentMethod ? (colors.error?.[400] || '#fca5a5') : colors.border.light,
+                    color: colors.text.primary
+                  }}
+                >
+                  <option value="">Selecciona un método</option>
+                  <option value="efectivo">💵 Efectivo</option>
+                  <option value="tarjeta_credito">💳 Tarjeta de Crédito</option>
+                  <option value="tarjeta_debito">💳 Tarjeta de Débito</option>
+                  <option value="transferencia">🏦 Transferencia Bancaria</option>
+                  <option value="yape">📱 Yape</option>
+                  <option value="plin">📱 Plin</option>
+                </select>
+                {errors.paymentMethod && (
+                  <p className="text-sm mt-1" style={{ color: colors.error?.[600] || '#dc2626' }}>
+                    {errors.paymentMethod}
+                  </p>
+                )}
+              </div>
+
+              {/* Fecha de Pago */}
               <Input
-                label="Método de Pago"
-                name="method"
-                type="text"
+                label="📅 Fecha de Pago"
+                name="paymentDate"
+                type="datetime-local"
                 required
-                value={formData.method}
+                value={formData.paymentDate}
                 onChange={handleChange}
-                error={errors.method}
+                error={errors.paymentDate}
               />
+
+              {/* ID de Transacción */}
               <Input
-                label="Estado"
-                name="status"
+                label="🏷️ ID de Transacción"
+                name="transactionId"
                 type="text"
-                required
-                value={formData.status}
+                value={formData.transactionId}
                 onChange={handleChange}
-                error={errors.status}
+                placeholder="CASH-001, VISA-1234, etc."
               />
-              <TextArea
-                label="Notas"
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-              />
+
+              {/* Estado */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  📊 Estado *
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  required
+                  className="w-full p-2 border rounded-lg" 
+                  style={{ 
+                    backgroundColor: colors.background.primary, 
+                    borderColor: errors.status ? (colors.error?.[400] || '#fca5a5') : colors.border.light,
+                    color: colors.text.primary
+                  }}
+                >
+                  <option value="">Selecciona un estado</option>
+                  <option value="pending">Pendiente</option>
+                  <option value="completed">Completado</option>
+                  <option value="failed">Fallido</option>
+                  <option value="refunded">Reembolsado</option>
+                </select>
+                {errors.status && (
+                  <p className="text-sm mt-1" style={{ color: colors.error?.[600] || '#dc2626' }}>
+                    {errors.status}
+                  </p>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>

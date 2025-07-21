@@ -6,8 +6,7 @@ import { treatmentService } from '../services/treatmentService';
 import { Button } from '../../shared/components/ui/Button';
 import { Input, TextArea } from '../../shared/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '../../shared/components/ui/Card';
-import { patientService } from '../../patients/services/patientService';
-import { doctorService } from '../../doctors/services/doctorService';
+import { medicalRecordService } from '../../medicalrecord/services/medicalRecordService';
 
 const CreateTreatmentPage = () => {
   const { colors } = useTheme();
@@ -17,22 +16,20 @@ const CreateTreatmentPage = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
-    patientId: '',
-    doctorId: '',
-    treatmentType: '',
+    medicalRecordId: '',
+    description: '',
     startDate: '',
     endDate: '',
-    notes: '',
+    instructions: '',
   });
-  const [patients, setPatients] = useState([]);
-  const [doctors, setDoctors] = useState([]);
+  const [medicalRecords, setMedicalRecords] = useState([]);
 
   useEffect(() => {
     async function fetchOptions() {
-      const pRes = await patientService.getActivePatients();
-      const dRes = await doctorService.getActiveDoctors();
-      setPatients(pRes.data?.patients || []);
-      setDoctors(dRes.data?.doctors || []);
+      const mrRes = await medicalRecordService.getMedicalRecordsWithPagination(1, 100);
+      // El API devuelve directamente un array
+      const records = Array.isArray(mrRes) ? mrRes : [];
+      setMedicalRecords(records);
     }
     fetchOptions();
   }, []);
@@ -47,9 +44,8 @@ const CreateTreatmentPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.patientId) newErrors.patientId = 'El paciente es obligatorio';
-    if (!formData.doctorId) newErrors.doctorId = 'El médico es obligatorio';
-    if (!formData.treatmentType.trim()) newErrors.treatmentType = 'El tipo de tratamiento es obligatorio';
+    if (!formData.medicalRecordId) newErrors.medicalRecordId = 'El historial médico es obligatorio';
+    if (!formData.description.trim()) newErrors.description = 'La descripción del tratamiento es obligatoria';
     if (!formData.startDate) newErrors.startDate = 'La fecha de inicio es obligatoria';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -61,14 +57,16 @@ const CreateTreatmentPage = () => {
     setLoading(true);
     try {
       const response = await treatmentService.create(formData);
-      if (response.success) {
+      // El API devuelve directamente el objeto creado si es exitoso
+      if (response && response.id) {
         toast.success('Tratamiento creado exitosamente');
         navigate('/treatments');
       } else {
         setErrors({ submit: response.message || 'Error al crear el tratamiento' });
       }
     } catch (err) {
-      setErrors({ submit: 'Error de conexión. Inténtalo nuevamente.' });
+      console.error('Error creating treatment:', err);
+      setErrors({ submit: err?.message || 'Error de conexión. Inténtalo nuevamente.' });
     } finally {
       setLoading(false);
     }
@@ -94,10 +92,10 @@ const CreateTreatmentPage = () => {
           <Card variant="critical">
             <div className="flex items-center">
               <div>
-                <h3 className="font-medium" style={{ color: colors.error[700] }}>
+                <h3 className="font-medium" style={{ color: colors.error?.[700] || '#b91c1c' }}>
                   Error al crear tratamiento
                 </h3>
-                <p className="text-sm" style={{ color: colors.error[600] }}>
+                <p className="text-sm" style={{ color: colors.error?.[600] || '#dc2626' }}>
                   {errors.submit}
                 </p>
               </div>
@@ -110,41 +108,41 @@ const CreateTreatmentPage = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <select
-                name="patientId"
-                value={formData.patientId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona un paciente</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>{p.fullName || `${p.firstName} ${p.lastName}`}</option>
-                ))}
-              </select>
-              <select
-                name="doctorId"
-                value={formData.doctorId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona un médico</option>
-                {doctors.map((d) => (
-                  <option key={d.id} value={d.id}>{d.fullName || `${d.firstName} ${d.lastName}`}</option>
-                ))}
-              </select>
+              {/* Historial Médico */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  📋 Historial Médico *
+                </label>
+                <select
+                  name="medicalRecordId"
+                  value={formData.medicalRecordId}
+                  onChange={handleChange}
+                  required
+                  className="w-full p-2 border rounded-lg" 
+                  style={{ 
+                    backgroundColor: colors.background.primary, 
+                    borderColor: errors.medicalRecordId ? (colors.error?.[400] || '#fca5a5') : colors.border.light,
+                    color: colors.text.primary
+                  }}
+                >
+                  <option value="">Selecciona un historial médico</option>
+                  {medicalRecords.map((record) => (
+                    <option key={record.id} value={record.id}>
+                      Historial #{record.id} - {record.patient?.fullName || `Paciente #${record.patientId}`}
+                      {record.diagnosis && ` - ${record.diagnosis.substring(0, 50)}${record.diagnosis.length > 50 ? '...' : ''}`}
+                    </option>
+                  ))}
+                </select>
+                {errors.medicalRecordId && (
+                  <p className="text-sm mt-1" style={{ color: colors.error?.[600] || '#dc2626' }}>
+                    {errors.medicalRecordId}
+                  </p>
+                )}
+              </div>
+
+              {/* Fecha de Inicio */}
               <Input
-                label="Tipo de Tratamiento"
-                name="treatmentType"
-                type="text"
-                required
-                value={formData.treatmentType}
-                onChange={handleChange}
-                error={errors.treatmentType}
-              />
-              <Input
-                label="Fecha de Inicio"
+                label="📅 Fecha de Inicio"
                 name="startDate"
                 type="date"
                 required
@@ -152,19 +150,39 @@ const CreateTreatmentPage = () => {
                 onChange={handleChange}
                 error={errors.startDate}
               />
+
+              {/* Fecha de Fin */}
               <Input
-                label="Fecha de Fin"
+                label="📅 Fecha de Fin"
                 name="endDate"
                 type="date"
                 value={formData.endDate}
                 onChange={handleChange}
               />
-              <TextArea
-                label="Notas"
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-              />
+
+              {/* Descripción del Tratamiento */}
+              <div className="md:col-span-2">
+                <TextArea
+                  label="📝 Descripción del Tratamiento"
+                  name="description"
+                  required
+                  value={formData.description}
+                  onChange={handleChange}
+                  error={errors.description}
+                  placeholder="Describe el tratamiento a realizar..."
+                />
+              </div>
+
+              {/* Instrucciones */}
+              <div className="md:col-span-2">
+                <TextArea
+                  label="📝 Instrucciones"
+                  name="instructions"
+                  value={formData.instructions}
+                  onChange={handleChange}
+                  placeholder="Instrucciones adicionales para el tratamiento..."
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

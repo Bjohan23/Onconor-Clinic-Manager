@@ -19,10 +19,12 @@ const EditInvoicePage = () => {
   const [errors, setErrors] = useState({});
   const [invoice, setInvoice] = useState(null);
   const [formData, setFormData] = useState({
-    patientId: '',
     amount: '',
+    tax: '',
+    total: '',
     status: '',
-    description: '',
+    issueDate: '',
+    dueDate: '',
   });
 
   useEffect(() => {
@@ -37,10 +39,12 @@ const EditInvoicePage = () => {
         const data = response.data?.invoice;
         setInvoice(data);
         setFormData({
-          patientId: data.patientId || '',
           amount: data.amount || '',
+          tax: data.tax || '',
+          total: data.total || '',
           status: data.status || '',
-          description: data.description || '',
+          issueDate: data.issueDate ? data.issueDate.slice(0, 16) : '', // Formato datetime-local
+          dueDate: data.dueDate ? data.dueDate.slice(0, 16) : '', // Formato datetime-local
         });
       } else {
         toast.error(response.message || 'Error al cargar la factura');
@@ -64,7 +68,6 @@ const EditInvoicePage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.patientId) newErrors.patientId = 'El paciente es obligatorio';
     if (!formData.amount || isNaN(formData.amount) || Number(formData.amount) <= 0) newErrors.amount = 'El monto debe ser mayor a 0';
     if (!formData.status) newErrors.status = 'El estado es obligatorio';
     setErrors(newErrors);
@@ -77,14 +80,16 @@ const EditInvoicePage = () => {
     setLoading(true);
     try {
       const response = await invoiceService.update(id, formData);
-      if (response.success) {
+      // El API devuelve { success: true, data: { invoice: {...} } }
+      if (response.success && response.data?.invoice) {
         toast.success('Factura actualizada exitosamente');
         navigate('/invoices');
       } else {
         setErrors({ submit: response.message || 'Error al actualizar la factura' });
       }
     } catch (err) {
-      setErrors({ submit: 'Error de conexión. Inténtalo nuevamente.' });
+      console.error('Error updating invoice:', err);
+      setErrors({ submit: err?.message || 'Error de conexión. Inténtalo nuevamente.' });
     } finally {
       setLoading(false);
     }
@@ -134,10 +139,10 @@ const EditInvoicePage = () => {
           <Card variant="critical">
             <div className="flex items-center">
               <div>
-                <h3 className="font-medium" style={{ color: colors.error[700] }}>
+                <h3 className="font-medium" style={{ color: colors.error?.[700] || '#b91c1c' }}>
                   Error al actualizar factura
                 </h3>
-                <p className="text-sm" style={{ color: colors.error[600] }}>
+                <p className="text-sm" style={{ color: colors.error?.[600] || '#dc2626' }}>
                   {errors.submit}
                 </p>
               </div>
@@ -150,37 +155,144 @@ const EditInvoicePage = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Información del paciente (solo lectura) */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  👤 Paciente
+                </label>
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: colors.background.secondary, 
+                  borderColor: colors.border.light 
+                }}>
+                  <div className="font-semibold" style={{ color: colors.text.primary }}>
+                    {invoice?.patient?.fullName || `Paciente #${invoice?.patientId}`}
+                  </div>
+                  {invoice?.patient?.dni && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      DNI: {invoice.patient.dni}
+                    </div>
+                  )}
+                  {invoice?.patient?.phone && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      Teléfono: {invoice.patient.phone}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Información de la cita (solo lectura) */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  📅 Cita Médica
+                </label>
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: colors.background.secondary, 
+                  borderColor: colors.border.light 
+                }}>
+                  <div className="font-semibold" style={{ color: colors.text.primary }}>
+                    Cita #{invoice?.appointmentId}
+                  </div>
+                  {invoice?.appointment?.appointmentDate && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      Fecha: {new Date(invoice.appointment.appointmentDate).toLocaleDateString('es-ES')}
+                    </div>
+                  )}
+                  {invoice?.appointment?.doctor?.fullName && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      Dr. {invoice.appointment.doctor.fullName}
+                    </div>
+                  )}
+                  {invoice?.appointment?.doctor?.specialty?.name && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      {invoice.appointment.doctor.specialty.name}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Monto base (editable) */}
               <Input
-                label="ID Paciente"
-                name="patientId"
-                type="text"
-                required
-                value={formData.patientId}
-                onChange={handleChange}
-                error={errors.patientId}
-              />
-              <Input
-                label="Monto"
+                label="💰 Monto Base"
                 name="amount"
                 type="number"
+                step="0.01"
+                min="0"
                 required
                 value={formData.amount}
                 onChange={handleChange}
                 error={errors.amount}
+                placeholder="0.00"
               />
+
+              {/* IGV (editable) */}
               <Input
-                label="Estado"
-                name="status"
-                type="text"
-                required
-                value={formData.status}
+                label="🏦 IGV"
+                name="tax"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.tax}
                 onChange={handleChange}
-                error={errors.status}
+                placeholder="0.00"
               />
-              <TextArea
-                label="Descripción"
-                name="description"
-                value={formData.description}
+
+              {/* Total (editable) */}
+              <Input
+                label="🧾 Total"
+                name="total"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.total}
+                onChange={handleChange}
+                placeholder="0.00"
+              />
+
+              {/* Estado (editable) */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  📊 Estado *
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  required
+                  className="w-full p-2 border rounded-lg" 
+                  style={{ 
+                    backgroundColor: colors.background.primary, 
+                    borderColor: errors.status ? (colors.error?.[400] || '#fca5a5') : colors.border.light,
+                    color: colors.text.primary
+                  }}
+                >
+                  <option value="">Selecciona un estado</option>
+                  <option value="pending">Pendiente</option>
+                  <option value="paid">Pagado</option>
+                  <option value="overdue">Vencido</option>
+                  <option value="cancelled">Cancelado</option>
+                </select>
+                {errors.status && (
+                  <p className="text-sm mt-1" style={{ color: colors.error?.[600] || '#dc2626' }}>
+                    {errors.status}
+                  </p>
+                )}
+              </div>
+
+              {/* Fecha de emisión (editable) */}
+              <Input
+                label="📅 Fecha de Emisión"
+                name="issueDate"
+                type="datetime-local"
+                value={formData.issueDate}
+                onChange={handleChange}
+              />
+
+              {/* Fecha de vencimiento (editable) */}
+              <Input
+                label="⏰ Fecha de Vencimiento"
+                name="dueDate"
+                type="datetime-local"
+                value={formData.dueDate}
                 onChange={handleChange}
               />
             </div>

@@ -1,4 +1,4 @@
-// DTO para Invoice
+// DTO para Invoice con datos relacionados
 class InvoiceDto {
     constructor(invoice) {
         this.id = invoice.id;
@@ -12,6 +12,41 @@ class InvoiceDto {
         this.dueDate = invoice.dueDate;
         this.createdAt = invoice.created_at || invoice.createdAt;
         this.updatedAt = invoice.updated_at || invoice.updatedAt;
+
+        // Datos del paciente
+        if (invoice.patient) {
+            this.patient = {
+                id: invoice.patient.id,
+                firstName: invoice.patient.firstName || '',
+                lastName: invoice.patient.lastName || '',
+                fullName: `${invoice.patient.firstName || ''} ${invoice.patient.lastName || ''}`.trim(),
+                email: invoice.patient.user?.email || '',
+                phone: invoice.patient.phone || '',
+                dni: invoice.patient.dni || ''
+            };
+        }
+
+        // Datos de la cita
+        if (invoice.appointment) {
+            this.appointment = {
+                id: invoice.appointment.id,
+                appointmentDate: invoice.appointment.appointmentDate,
+                status: invoice.appointment.status,
+                reason: invoice.appointment.reason,
+                doctor: invoice.appointment.doctor ? {
+                    id: invoice.appointment.doctor.id,
+                    firstName: invoice.appointment.doctor.firstName || '',
+                    lastName: invoice.appointment.doctor.lastName || '',
+                    fullName: `${invoice.appointment.doctor.firstName || ''} ${invoice.appointment.doctor.lastName || ''}`.trim(),
+                    phone: invoice.appointment.doctor.phone || '',
+                    specialty: invoice.appointment.doctor.specialty ? {
+                        id: invoice.appointment.doctor.specialty.id,
+                        name: invoice.appointment.doctor.specialty.name,
+                        description: invoice.appointment.doctor.specialty.description
+                    } : null
+                } : null
+            };
+        }
     }
 
     static forCreate(data) {

@@ -37,9 +37,11 @@ const InvoicesPage = () => {
         itemsPerPage,
         filters
       );
-      setInvoices(response.data?.invoices || []);
-      setTotalPages(response.data?.pagination?.totalPages || 1);
-      setTotalItems(response.data?.pagination?.total || 0);
+      // El API devuelve { success: true, data: { invoices: [...] } }
+      const invoices = response.data?.invoices || [];
+      setInvoices(invoices);
+      setTotalPages(1); // Sin paginación real del API
+      setTotalItems(invoices.length);
     } catch (err) {
       setError('Error al cargar las facturas');
     } finally {
@@ -66,14 +68,136 @@ const InvoicesPage = () => {
   };
 
   const columns = [
-    { key: 'id', title: 'ID' },
-    { key: 'patientId', title: 'Paciente' },
-    { key: 'amount', title: 'Monto' },
-    { key: 'status', title: 'Estado' },
-    { key: 'created_at', title: 'Fecha Emisión' },
+    { 
+      key: 'id', 
+      title: 'ID',
+      render: (value) => `#${value}`
+    },
+    { 
+      key: 'patient', 
+      title: '👤 Paciente',
+      render: (value, invoice) => (
+        <div>
+          <div className="font-semibold" style={{ color: colors.text.primary }}>
+            {invoice.patient?.fullName || `Paciente #${invoice.patientId}`}
+          </div>
+          {invoice.patient?.dni && (
+            <div className="text-xs" style={{ color: colors.text.secondary }}>
+              DNI: {invoice.patient.dni}
+            </div>
+          )}
+        </div>
+      )
+    },
+    { 
+      key: 'appointment', 
+      title: '📅 Cita',
+      render: (value, invoice) => (
+        <div>
+          <div className="font-semibold" style={{ color: colors.text.primary }}>
+            Cita #{invoice.appointmentId}
+          </div>
+          {invoice.appointment?.appointmentDate && (
+            <div className="text-xs" style={{ color: colors.text.secondary }}>
+              {new Date(invoice.appointment.appointmentDate).toLocaleDateString('es-ES')}
+            </div>
+          )}
+          {invoice.appointment?.doctor?.fullName && (
+            <div className="text-xs" style={{ color: colors.text.secondary }}>
+              Dr. {invoice.appointment.doctor.fullName}
+            </div>
+          )}
+        </div>
+      )
+    },
+    { 
+      key: 'amount', 
+      title: '💰 Monto',
+      render: (value, invoice) => (
+        <div>
+          <div className="font-semibold" style={{ color: colors.text.primary }}>
+            S/ {parseFloat(invoice.amount || 0).toFixed(2)}
+          </div>
+          {invoice.tax && parseFloat(invoice.tax) > 0 && (
+            <div className="text-xs" style={{ color: colors.text.secondary }}>
+              + IGV: S/ {parseFloat(invoice.tax).toFixed(2)}
+            </div>
+          )}
+        </div>
+      )
+    },
+    { 
+      key: 'total', 
+      title: '🧾 Total',
+      render: (value) => (
+        <div className="font-semibold text-lg" style={{ color: colors.success?.[600] || colors.secondary?.[600] || '#059669' }}>
+          S/ {parseFloat(value || 0).toFixed(2)}
+        </div>
+      )
+    },
+    { 
+      key: 'status', 
+      title: '📊 Estado',
+      render: (value) => {
+        const statusConfig = {
+          pending: { color: colors.warning?.[600] || '#d97706', bg: colors.warning?.[50] || '#fffbeb', text: 'Pendiente' },
+          paid: { color: colors.success?.[600] || '#059669', bg: colors.success?.[50] || '#ecfdf5', text: 'Pagado' },
+          overdue: { color: colors.error?.[600] || '#dc2626', bg: colors.error?.[50] || '#fef2f2', text: 'Vencido' },
+          cancelled: { color: colors.gray?.[600] || '#4b5563', bg: colors.gray?.[50] || '#f9fafb', text: 'Cancelado' }
+        };
+        const config = statusConfig[value] || statusConfig.pending;
+        return (
+          <span 
+            className="px-2 py-1 text-xs font-medium rounded-full"
+            style={{ 
+              color: config.color, 
+              backgroundColor: config.bg 
+            }}
+          >
+            {config.text}
+          </span>
+        );
+      }
+    },
+    { 
+      key: 'issueDate', 
+      title: '📅 F. Emisión',
+      render: (value) => {
+        if (!value) return 'No especificada';
+        const date = new Date(value);
+        return date.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+      }
+    },
+    { 
+      key: 'dueDate', 
+      title: '⏰ F. Vencimiento',
+      render: (value) => {
+        if (!value) return 'No especificada';
+        const date = new Date(value);
+        const isOverdue = date < new Date() && value !== null;
+        return (
+          <div style={{ color: isOverdue ? (colors.error?.[600] || '#dc2626') : colors.text.primary }}>
+            {date.toLocaleDateString('es-ES', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            })}
+            {isOverdue && (
+              <div className="text-xs font-medium" style={{ color: colors.error?.[600] || '#dc2626' }}>
+                Vencido
+              </div>
+            )}
+          </div>
+        );
+      }
+    },
     {
       key: 'actions',
-      title: 'Acciones',
+      title: '🔧 Acciones',
       render: (_, invoice) => (
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => navigate(`/invoices/edit/${invoice.id}`)}>
