@@ -1,11 +1,75 @@
 const MedicalRecord = require('../models/medicalRecord');
+const Patient = require('../../patients/models/patient');
+const Doctor = require('../../doctors/models/doctor');
+const User = require('../../users/models/user');
+const Specialty = require('../../specialties/models/specialty');
 
 const getAllMedicalRecords = async () => {
-  return await MedicalRecord().findAll();
+  return await MedicalRecord().findAll({
+    include: [
+      {
+        model: Patient(),
+        as: 'patient',
+        attributes: ['id', 'firstName', 'lastName', 'phone', 'dni'],
+        include: [{
+          model: User(),
+          as: 'user',
+          attributes: ['email', 'username']
+        }]
+      },
+      {
+        model: Doctor(),
+        as: 'doctor',
+        attributes: ['id', 'firstName', 'lastName', 'phone'],
+        include: [
+          {
+            model: User(),
+            as: 'user',
+            attributes: ['email', 'username']
+          },
+          {
+            model: Specialty(),
+            as: 'specialty',
+            attributes: ['name', 'description']
+          }
+        ]
+      }
+    ]
+  });
 };
 
 const getMedicalRecordById = async (id) => {
-  return await MedicalRecord().findByPk(id);
+  return await MedicalRecord().findByPk(id, {
+    include: [
+      {
+        model: Patient(),
+        as: 'patient',
+        attributes: ['id', 'firstName', 'lastName', 'phone', 'dni'],
+        include: [{
+          model: User(),
+          as: 'user',
+          attributes: ['email', 'username']
+        }]
+      },
+      {
+        model: Doctor(),
+        as: 'doctor',
+        attributes: ['id', 'firstName', 'lastName', 'phone'],
+        include: [
+          {
+            model: User(),
+            as: 'user',
+            attributes: ['email', 'username']
+          },
+          {
+            model: Specialty(),
+            as: 'specialty',
+            attributes: ['name', 'description']
+          }
+        ]
+      }
+    ]
+  });
 };
 
 const createMedicalRecord = async (data) => {

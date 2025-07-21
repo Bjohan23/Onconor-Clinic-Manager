@@ -75,18 +75,40 @@ const MedicalRecordsPage = () => {
       render: (value) => `#${value}`
     },
     { 
-      key: 'patientId', 
-      title: 'Paciente ID',
-      render: (value) => `Paciente ${value}`
+      key: 'patient', 
+      title: '👤 Paciente',
+      render: (value, record) => (
+        <div>
+          <div className="font-semibold" style={{ color: colors.text.primary }}>
+            {record.patient?.fullName || `Paciente ${record.patientId}`}
+          </div>
+          {record.patient?.email && (
+            <div className="text-xs" style={{ color: colors.text.secondary }}>
+              {record.patient.email}
+            </div>
+          )}
+        </div>
+      )
     },
     { 
-      key: 'doctorId', 
-      title: 'Médico ID',
-      render: (value) => `Doctor ${value}`
+      key: 'doctor', 
+      title: '👨‍⚕️ Médico',
+      render: (value, record) => (
+        <div>
+          <div className="font-semibold" style={{ color: colors.text.primary }}>
+            {record.doctor?.fullName || `Doctor ${record.doctorId}`}
+          </div>
+          {record.doctor?.specialty?.name && (
+            <div className="text-xs" style={{ color: colors.text.secondary }}>
+              {record.doctor.specialty.name}
+            </div>
+          )}
+        </div>
+      )
     },
     { 
       key: 'diagnosis', 
-      title: 'Diagnóstico',
+      title: '🏥 Diagnóstico',
       render: (value) => (
         <div className="max-w-xs truncate" title={value}>
           {value}
@@ -95,7 +117,7 @@ const MedicalRecordsPage = () => {
     },
     { 
       key: 'symptoms', 
-      title: 'Síntomas',
+      title: '💊 Síntomas',
       render: (value) => (
         <div className="max-w-xs truncate" title={value}>
           {value || 'No especificado'}
@@ -104,7 +126,7 @@ const MedicalRecordsPage = () => {
     },
     { 
       key: 'date', 
-      title: 'Fecha',
+      title: '📅 Fecha',
       render: (value) => {
         if (!value) return 'No especificada';
         const date = new Date(value);
@@ -119,7 +141,7 @@ const MedicalRecordsPage = () => {
     },
     {
       key: 'actions',
-      title: 'Acciones',
+      title: '🔧 Acciones',
       render: (_, record) => (
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => navigate(`/medical-records/edit/${record.id}`)}>

@@ -35,10 +35,24 @@ const EditMedicalRecordPage = () => {
 
   useEffect(() => {
     async function fetchOptions() {
-      const pRes = await patientService.getActivePatients();
-      const dRes = await doctorService.getActiveDoctors();
-      setPatients(pRes.data?.patients || []);
-      setDoctors(dRes.data?.doctors || []);
+      try {
+        const pRes = await patientService.getActivePatients();
+        const dRes = await doctorService.getActiveDoctors();
+        // Ajustar según la estructura real de las respuestas del API
+        setPatients(Array.isArray(pRes) ? pRes : (pRes?.patients || []));
+        setDoctors(Array.isArray(dRes) ? dRes : (dRes?.doctors || []));
+      } catch (error) {
+        console.error('Error loading options:', error);
+        // Intentar con los servicios básicos si fallan los específicos
+        try {
+          const pRes = await patientService.getAll();
+          const dRes = await doctorService.getAll();
+          setPatients(Array.isArray(pRes) ? pRes : []);
+          setDoctors(Array.isArray(dRes) ? dRes : []);
+        } catch (fallbackError) {
+          console.error('Error loading fallback options:', fallbackError);
+        }
+      }
     }
     fetchOptions();
   }, []);
@@ -47,17 +61,17 @@ const EditMedicalRecordPage = () => {
     try {
       setLoadingRecord(true);
       const response = await medicalRecordService.getById(id);
-      if (response.success) {
-        const data = response.data?.medicalRecord;
-        setRecord(data);
+      // El API devuelve directamente el objeto del historial médico
+      if (response && response.id) {
+        setRecord(response);
         setFormData({
-          patientId: data.patientId || '',
-          doctorId: data.doctorId || '',
-          diagnosis: data.diagnosis || '',
-          notes: data.notes || '',
+          patientId: response.patientId || '',
+          doctorId: response.doctorId || '',
+          diagnosis: response.diagnosis || '',
+          notes: response.observations || '', // El API usa 'observations' en lugar de 'notes'
         });
       } else {
-        toast.error(response.message || 'Error al cargar el historial');
+        toast.error('Error al cargar el historial');
         navigate('/medical-records');
       }
     } catch (err) {
@@ -164,30 +178,42 @@ const EditMedicalRecordPage = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <select
-                name="patientId"
-                value={formData.patientId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona un paciente</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>{p.fullName || `${p.firstName} ${p.lastName}`}</option>
-                ))}
-              </select>
-              <select
-                name="doctorId"
-                value={formData.doctorId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona un médico</option>
-                {doctors.map((d) => (
-                  <option key={d.id} value={d.id}>{d.fullName || `${d.firstName} ${d.lastName}`}</option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  Paciente Actual
+                </label>
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: colors.background.secondary, 
+                  borderColor: colors.border.light 
+                }}>
+                  <div className="font-semibold" style={{ color: colors.text.primary }}>
+                    {record?.patient?.fullName || `Paciente ${formData.patientId}`}
+                  </div>
+                  {record?.patient?.email && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      {record.patient.email}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  Médico Actual
+                </label>
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: colors.background.secondary, 
+                  borderColor: colors.border.light 
+                }}>
+                  <div className="font-semibold" style={{ color: colors.text.primary }}>
+                    {record?.doctor?.fullName || `Doctor ${formData.doctorId}`}
+                  </div>
+                  {record?.doctor?.specialty?.name && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      {record.doctor.specialty.name}
+                    </div>
+                  )}
+                </div>
+              </div>
               <Input
                 label="Diagnóstico"
                 name="diagnosis"
@@ -198,7 +224,7 @@ const EditMedicalRecordPage = () => {
                 error={errors.diagnosis}
               />
               <TextArea
-                label="Notas"
+                label="Observaciones"
                 name="notes"
                 value={formData.notes}
                 onChange={handleChange}
