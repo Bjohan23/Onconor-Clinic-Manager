@@ -38,8 +38,8 @@ const SchedulesPage = () => {
                 doctorService.getActiveDoctors()
             ]);
 
-            setSchedules(schedulesResponse.data || []);
-            setDoctors(doctorsResponse.data || []);
+            setSchedules(schedulesResponse.data?.schedules || []);
+            setDoctors(doctorsResponse.data?.doctors || []);
         } catch (error) {
             console.error('Error al cargar datos iniciales:', error);
         } finally {
@@ -51,7 +51,7 @@ const SchedulesPage = () => {
         try {
             setLoading(true);
             const response = await scheduleService.getAllSchedules(filters);
-            setSchedules(response.data || []);
+            setSchedules(response.data?.schedules || []);
         } catch (error) {
             console.error('Error al cargar horarios:', error);
         } finally {
@@ -239,7 +239,7 @@ const SchedulesPage = () => {
                                 }}
                             >
                                 <option value="">Todos los médicos</option>
-                                {doctors.map(doctor => (
+                                {(doctors || []).map(doctor => (
                                     <option key={doctor.id} value={doctor.id}>
                                         {doctor.firstName} {doctor.lastName}
                                     </option>
@@ -311,7 +311,7 @@ const SchedulesPage = () => {
                             </p>
                         </div>
                     ) : (
-                        Object.entries(groupedSchedules).map(([doctorId, data]) => (
+                        Object.entries(groupedSchedules || {}).map(([doctorId, data]) => (
                             <DoctorScheduleCard
                                 key={doctorId}
                                 doctor={data.doctor}

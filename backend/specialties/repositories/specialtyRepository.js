@@ -1,5 +1,5 @@
 const { Specialty, Doctor } = require('../../shared/models');
-const { Op } = require('sequelize');
+const { Op, fn, col } = require('sequelize');
 
 class SpecialtyRepository {
     
@@ -279,7 +279,7 @@ class SpecialtyRepository {
                 attributes: [
                     'id',
                     'name',
-                    [Specialty.sequelize.fn('COUNT', Specialty.sequelize.col('doctors.id')), 'doctorCount']
+                    [fn('COUNT', col('doctors.id')), 'doctorCount']
                 ],
                 include: [{
                     model: Doctor,
@@ -295,7 +295,7 @@ class SpecialtyRepository {
                     flg_deleted: false,
                     isActive: true
                 },
-                group: ['Specialty.id']
+                group: ['specialties.id', 'specialties.name']
             });
 
             return {

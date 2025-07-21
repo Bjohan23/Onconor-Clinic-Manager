@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 const { Appointment, Patient, Doctor, Specialty, AppointmentStatus } = require('../../shared/models');
 const { Op } = require('sequelize');
+=======
+const { sequelize } = require('../../config/database');
+const { Op, fn, col } = require('sequelize');
+>>>>>>> aecdbfb6f16fcdfa7686f1327e6b50f014788eaa
 
 class AppointmentRepository {
     
@@ -444,10 +449,19 @@ class AppointmentRepository {
             const appointmentsByStatus = await Appointment.findAll({
                 attributes: [
                     'status',
-                    [Appointment.sequelize.fn('COUNT', Appointment.sequelize.col('id')), 'count']
+                    [fn('COUNT', col('appointments.id')), 'count']
                 ],
+<<<<<<< HEAD
                 where: whereClause,
                 group: ['status']
+=======
+                where: { 
+                    flg_deleted: false,
+                    active: true
+                },
+                group: ['appointments.status'],
+                raw: true
+>>>>>>> aecdbfb6f16fcdfa7686f1327e6b50f014788eaa
             });
 
             const appointmentsByDoctor = await Appointment.findAll({

@@ -1,11 +1,11 @@
 const express = require('express');
 const reportController = require('../controllers/reportController');
-const { authenticateToken } = require('../../shared/middlewares/authMiddleware');
+const authMiddleware = require('../../shared/middlewares/authMiddleware');
 
 const router = express.Router();
 
 // Aplicar middleware de autenticación a todas las rutas
-router.use(authenticateToken);
+router.use(authMiddleware);
 
 // Rutas de reportes
 router.get('/dashboard-stats', reportController.getDashboardStats);

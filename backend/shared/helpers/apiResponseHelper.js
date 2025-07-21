@@ -89,6 +89,22 @@ class ApiResponseHelper {
     }
 }
 
+// Helper functions para crear respuestas
+const createSuccessResponse = (data, message = 'Operación exitosa') => ({
+    success: true,
+    message,
+    data
+});
+
+const createErrorResponse = (message, details = null) => ({
+    success: false,
+    message,
+    data: null,
+    ...(details && { details })
+});
+
 module.exports = {
-    apiResponse: new ApiResponseHelper()
+    apiResponse: new ApiResponseHelper(),
+    createSuccessResponse,
+    createErrorResponse
 };
