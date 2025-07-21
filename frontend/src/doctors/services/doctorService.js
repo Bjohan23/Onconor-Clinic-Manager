@@ -272,5 +272,10 @@ export const doctorService = {
   // Obtener estadísticas de citas del doctor
   getDoctorAppointmentStats: async (doctorId, period = 'month') => {
     return apiClient.get(`/doctors/${doctorId}/appointment-stats?period=${period}`)
+  },
+
+  // Obtener todas las especialidades (para filtros, etc.)
+  getSpecialties: async () => {
+    return apiClient.get('/specialties')
   }
 }

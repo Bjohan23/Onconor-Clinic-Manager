@@ -22,7 +22,25 @@ export const specialtyService = {
     if (filters.search) params.append('search', filters.search)
     if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString())
     
-    return apiClient.get(`/specialties/paginated?${params.toString()}`)
+    const response = await apiClient.get(`/specialties/paginated?${params.toString()}`)
+    // Mapea los campos correctamente
+    if (response.success && Array.isArray(response.data?.specialties)) {
+      response.data.specialties = response.data.specialties.map(s => ({
+        id: s.id,
+        name: s.name,
+        description: s.description,
+        isActive: s.isActive,
+        doctorCount: s.doctorCount,
+        createdAt: s.createdAt || s.created_at,
+        updatedAt: s.updatedAt || s.updated_at,
+        flg_deleted: s.flg_deleted,
+        deleted_at: s.deleted_at,
+        user_created: s.user_created,
+        user_updated: s.user_updated,
+        user_deleted: s.user_deleted
+      }))
+    }
+    return response
   },
 
   // Obtener especialidad por ID
@@ -96,7 +114,25 @@ export const specialtyService = {
     const queryString = params.toString()
     const url = queryString ? `/specialties?${queryString}` : '/specialties'
     
-    return apiClient.get(url)
+    const response = await apiClient.get(url)
+    // Mapea los campos correctamente
+    if (response.success && Array.isArray(response.data?.specialties)) {
+      response.data.specialties = response.data.specialties.map(s => ({
+        id: s.id,
+        name: s.name,
+        description: s.description,
+        isActive: s.isActive,
+        doctorCount: s.doctorCount,
+        createdAt: s.createdAt || s.created_at,
+        updatedAt: s.updatedAt || s.updated_at,
+        flg_deleted: s.flg_deleted,
+        deleted_at: s.deleted_at,
+        user_created: s.user_created,
+        user_updated: s.user_updated,
+        user_deleted: s.user_deleted
+      }))
+    }
+    return response
   },
 
   // Exportar especialidades
