@@ -373,6 +373,18 @@ class DoctorController {
             return apiResponse.error(res, 'Error interno del servidor');
         }
     }
+
+    // Obtener horarios del doctor
+    async getDoctorSchedules(req, res) {
+        try {
+            const { id } = req.params;
+            const schedules = await doctorRepository.getSchedulesByDoctorId(id);
+            return apiResponse.success(res, 'Horarios obtenidos exitosamente', { schedules });
+        } catch (error) {
+            console.error('Error al obtener horarios del doctor:', error);
+            return apiResponse.error(res, 'Error interno del servidor');
+        }
+    }
 }
 
 module.exports = new DoctorController();

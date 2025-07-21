@@ -113,7 +113,7 @@ const CreatePatientPage = () => {
     try {
       // Preparar datos para enviar
       const patientData = {
-        ...formData,
+        userId: user?.id || 1, // ID del usuario que está creando el paciente
         dni: formData.dni.trim(),
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
@@ -248,17 +248,6 @@ const CreatePatientPage = () => {
                 onChange={handleChange}
                 error={errors.dni}
                 helperText="Documento Nacional de Identidad (8 dígitos)"
-              />
-
-              <Input
-                label="Email"
-                name="email"
-                type="email"
-                placeholder="paciente@ejemplo.com"
-                value={formData.email}
-                onChange={handleChange}
-                error={errors.email}
-                helperText="Correo electrónico (opcional)"
               />
 
               <Input

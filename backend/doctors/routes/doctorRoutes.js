@@ -30,6 +30,7 @@ const routes = [
     
     // Búsqueda por licencia
     { method: 'get', path: '/license/:license', handler: doctorController.getDoctorByLicense },
+    { method: 'get', path: '/:id/schedules', handler: doctorController.getDoctorSchedules },
 ];
 
 module.exports = createRouter(routes);

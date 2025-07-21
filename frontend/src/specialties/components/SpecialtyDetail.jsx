@@ -41,6 +41,14 @@ const SpecialtyDetail = ({
         }
     };
 
+    if (!specialty || typeof specialty !== 'object') {
+        return (
+            <div className="p-8 text-center text-gray-400">
+                Especialidad no encontrada o datos inválidos.
+            </div>
+        );
+    }
+
     return (
         <div className="w-full max-w-4xl max-h-[90vh] overflow-auto p-8">
             {/* Header */}
@@ -53,12 +61,12 @@ const SpecialtyDetail = ({
                     </div>
                     <div>
                         <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent neon-text">
-                            {specialty.name}
+                            {String(specialty.name)}
                         </h2>
                         <div className="flex items-center gap-3 mt-2">
-                            {getStatusBadge(specialty.isActive)}
+                            {getStatusBadge(!!specialty.isActive)}
                             <span className="text-white/60 text-sm">
-                                ID: {specialty.id}
+                                ID: {String(specialty.id)}
                             </span>
                         </div>
                     </div>
@@ -96,7 +104,7 @@ const SpecialtyDetail = ({
                                 Nombre
                             </label>
                             <p className="text-white text-lg font-semibold mt-1">
-                                {specialty.name}
+                                {String(specialty.name)}
                             </p>
                         </div>
                         
@@ -105,7 +113,7 @@ const SpecialtyDetail = ({
                                 Descripción
                             </label>
                             <p className="text-white/80 mt-1 leading-relaxed">
-                                {specialty.description || 'Sin descripción disponible'}
+                                {specialty.description ? String(specialty.description) : 'Sin descripción disponible'}
                             </p>
                         </div>
                         
@@ -114,7 +122,7 @@ const SpecialtyDetail = ({
                                 Estado
                             </label>
                             <div className="mt-2">
-                                {getStatusBadge(specialty.isActive)}
+                                {getStatusBadge(!!specialty.isActive)}
                             </div>
                         </div>
                     </div>
@@ -133,7 +141,7 @@ const SpecialtyDetail = ({
                         <div className="text-center">
                             <div className="w-20 h-20 bg-gradient-primary rounded-2xl mx-auto flex items-center justify-center mb-3">
                                 <span className="text-2xl font-bold text-white">
-                                    {specialty.doctors?.length || 0}
+                                    {Array.isArray(specialty.doctors) ? specialty.doctors.length : 0}
                                 </span>
                             </div>
                             <p className="text-white/70">Médicos Asignados</p>
@@ -142,13 +150,13 @@ const SpecialtyDetail = ({
                         <div className="grid grid-cols-2 gap-4">
                             <div className="text-center">
                                 <p className="text-2xl font-bold text-green-400">
-                                    {specialty.doctors?.filter(d => d.isActive).length || 0}
+                                    {Array.isArray(specialty.doctors) ? specialty.doctors.filter(d => d.isActive).length : 0}
                                 </p>
                                 <p className="text-white/60 text-sm">Activos</p>
                             </div>
                             <div className="text-center">
                                 <p className="text-2xl font-bold text-red-400">
-                                    {specialty.doctors?.filter(d => !d.isActive).length || 0}
+                                    {Array.isArray(specialty.doctors) ? specialty.doctors.filter(d => !d.isActive).length : 0}
                                 </p>
                                 <p className="text-white/60 text-sm">Inactivos</p>
                             </div>
@@ -171,7 +179,7 @@ const SpecialtyDetail = ({
                                 Fecha de Creación
                             </label>
                             <p className="text-white/80 mt-1">
-                                {formatDate(specialty.created_at)}
+                                {formatDate(specialty.created_at || specialty.createdAt)}
                             </p>
                         </div>
                         
@@ -180,7 +188,7 @@ const SpecialtyDetail = ({
                                 Última Actualización
                             </label>
                             <p className="text-white/80 mt-1">
-                                {formatDate(specialty.updated_at)}
+                                {formatDate(specialty.updated_at || specialty.updatedAt)}
                             </p>
                         </div>
                         
@@ -206,19 +214,19 @@ const SpecialtyDetail = ({
                         Médicos Asignados
                     </h3>
                     
-                    {specialty.doctors && specialty.doctors.length > 0 ? (
+                    {Array.isArray(specialty.doctors) && specialty.doctors.length > 0 ? (
                         <div className="space-y-3">
                             {specialty.doctors.map((doctor, index) => (
-                                <div key={doctor.id || index} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                                <div key={String(doctor.id) || index} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
                                     <div className="flex items-center">
                                         <div className="w-10 h-10 bg-gradient-secondary rounded-full flex items-center justify-center mr-3">
                                             <span className="text-white font-semibold text-sm">
-                                                {doctor.firstName?.[0]}{doctor.lastName?.[0]}
+                                                {doctor.firstName?.[0] || ''}{doctor.lastName?.[0] || ''}
                                             </span>
                                         </div>
                                         <div>
                                             <p className="text-white font-medium">
-                                                Dr. {doctor.firstName} {doctor.lastName}
+                                                Dr. {doctor.firstName || ''} {doctor.lastName || ''}
                                             </p>
                                             <p className="text-white/60 text-sm">
                                                 {doctor.medicalCode || 'Sin código'}

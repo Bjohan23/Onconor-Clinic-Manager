@@ -88,7 +88,29 @@ export const specialtyService = {
 
   // Obtener estadísticas de especialidades
   getSpecialtyStats: async () => {
-    return apiClient.get('/specialties/stats')
+    const response = await apiClient.get('/specialties/stats');
+    // Normaliza el formato para que siempre devuelva stats con las claves correctas
+    if (response.success && response.data?.stats) {
+      const stats = response.data.stats;
+      return {
+        ...response,
+        data: {
+          stats: {
+            total: stats.total || 0,
+            active: stats.active || 0,
+            inactive: stats.inactive || 0,
+            withDoctors: Array.isArray(stats.withDoctors)
+              ? stats.withDoctors.map(s => ({
+                  id: s.id,
+                  name: s.name,
+                  doctorCount: s.doctorCount || 0
+                }))
+              : []
+          }
+        }
+      };
+    }
+    return response;
   },
 
   // Verificar disponibilidad de nombre
@@ -112,7 +134,7 @@ export const specialtyService = {
     if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString())
     
     const queryString = params.toString()
-    const url = queryString ? `/specialties?${queryString}` : '/specialties'
+    const url = queryString ? `/specialties/all?${queryString}` : '/specialties/all'
     
     const response = await apiClient.get(url)
     // Mapea los campos correctamente

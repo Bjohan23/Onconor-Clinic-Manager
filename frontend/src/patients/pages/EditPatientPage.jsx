@@ -49,7 +49,7 @@ const EditPatientPage = () => {
       const response = await patientService.getPatientById(id)
       
       if (response.success) {
-        const patientData = response.data
+        const patientData = response.data?.patient
         setPatient(patientData)
         
         // Formatear fecha para input date
@@ -328,16 +328,6 @@ const EditPatientPage = () => {
                 helperText="Documento Nacional de Identidad (8 dígitos)"
               />
 
-              <Input
-                label="Email"
-                name="email"
-                type="email"
-                placeholder="paciente@ejemplo.com"
-                value={formData.email}
-                onChange={handleChange}
-                error={errors.email}
-                helperText="Correo electrónico (opcional)"
-              />
 
               <Input
                 label="Nombres"

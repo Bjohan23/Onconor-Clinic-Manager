@@ -127,7 +127,7 @@ const CreateDoctorPage = () => {
     try {
       // Preparar datos para enviar
       const doctorData = {
-        ...formData,
+        userId: user?.id || 1,
         medicalCode: formData.medicalCode.trim().toUpperCase(),
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
@@ -139,7 +139,8 @@ const CreateDoctorPage = () => {
         graduationYear: parseInt(formData.graduationYear),
         experience: parseInt(formData.experience),
         consultationFee: parseFloat(formData.consultationFee),
-        bio: formData.bio.trim()
+        bio: formData.bio.trim(),
+        status: formData.status
       }
 
       const response = await doctorService.createDoctor(doctorData)

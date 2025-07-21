@@ -33,11 +33,6 @@ export const doctorService = {
     return apiClient.get(`/doctors/${id}`)
   },
 
-  // Obtener doctor por código médico
-  getDoctorByMedicalCode: async (medicalCode) => {
-    return apiClient.get(`/doctors/medical-code/${medicalCode}`)
-  },
-
   // Crear nuevo doctor
   createDoctor: async (doctorData) => {
     return apiClient.post('/doctors', doctorData)
@@ -237,45 +232,9 @@ export const doctorService = {
     return apiClient.get(`/doctors/specialty/${specialtyId}`)
   },
 
-  // Obtener doctores disponibles
-  getAvailableDoctors: async (date, time = null) => {
-    const params = new URLSearchParams({ date })
-    if (time) params.append('time', time)
-    
-    return apiClient.get(`/doctors/available?${params.toString()}`)
-  },
-
-  // Marcar doctor como ocupado
-  markDoctorAsBusy: async (doctorId, reason, startTime, endTime) => {
-    return apiClient.patch(`/doctors/${doctorId}/mark-busy`, {
-      reason,
-      startTime,
-      endTime
-    })
-  },
-
-  // Marcar doctor como disponible
-  markDoctorAsAvailable: async (doctorId) => {
-    return apiClient.patch(`/doctors/${doctorId}/mark-available`)
-  },
-
-  // Obtener reporte de performance del doctor
-  getDoctorPerformanceReport: async (doctorId, startDate, endDate) => {
-    return apiClient.get(`/doctors/${doctorId}/performance?startDate=${startDate}&endDate=${endDate}`)
-  },
-
-  // Obtener valoraciones del doctor
-  getDoctorRatings: async (doctorId, page = 1, limit = 10) => {
-    return apiClient.get(`/doctors/${doctorId}/ratings?page=${page}&limit=${limit}`)
-  },
-
-  // Obtener estadísticas de citas del doctor
-  getDoctorAppointmentStats: async (doctorId, period = 'month') => {
-    return apiClient.get(`/doctors/${doctorId}/appointment-stats?period=${period}`)
-  },
-
   // Obtener todas las especialidades (para filtros, etc.)
   getSpecialties: async () => {
-    return apiClient.get('/specialties')
+    // Usa la ruta correcta del backend, por ejemplo /specialties/all
+    return apiClient.get('/specialties/all')
   }
 }

@@ -27,14 +27,28 @@ const AppointmentDetail = ({
         return { date: formattedDate, time };
     };
 
-    // Obtener color del estado
+    // Obtener color del estado (función local)
     const getStatusColor = (status) => {
-        return appointmentService.getStatusColor(status);
+        switch ((status || '').toLowerCase()) {
+            case 'scheduled': return '#2563eb'; // azul
+            case 'confirmed': return '#059669'; // verde
+            case 'in_progress': return '#f59e42'; // naranja
+            case 'completed': return '#10b981'; // verde claro
+            case 'cancelled': return '#ef4444'; // rojo
+            default: return '#6b7280'; // gris
+        }
     };
 
-    // Obtener texto del estado
+    // Obtener texto del estado (función local)
     const getStatusText = (status) => {
-        return appointmentService.getStatusText(status);
+        switch ((status || '').toLowerCase()) {
+            case 'scheduled': return 'Programada';
+            case 'confirmed': return 'Confirmada';
+            case 'in_progress': return 'En progreso';
+            case 'completed': return 'Completada';
+            case 'cancelled': return 'Cancelada';
+            default: return status || 'Desconocido';
+        }
     };
 
     // Obtener color de prioridad
@@ -47,9 +61,26 @@ const AppointmentDetail = ({
         return appointmentService.getPriorityText(priority);
     };
 
+    // Calcular tiempo hasta la cita (implementación local)
+    const calculateTimeUntilAppointment = (date, time) => {
+        if (!date || !time) return { isPast: false, text: '' };
+        const appointmentDateTime = new Date(`${date}T${time}`);
+        const now = new Date();
+        const diffMs = appointmentDateTime - now;
+        if (diffMs <= 0) return { isPast: true, text: 'La cita ya pasó' };
+        const diffMins = Math.floor(diffMs / 60000);
+        const hours = Math.floor(diffMins / 60);
+        const mins = diffMins % 60;
+        let text = '';
+        if (hours > 0) text += `${hours} hora${hours > 1 ? 's' : ''} `;
+        if (mins > 0) text += `${mins} minuto${mins > 1 ? 's' : ''}`;
+        if (!text) text = 'Menos de un minuto';
+        return { isPast: false, text: `Faltan ${text}` };
+    };
+
     // Calcular tiempo hasta la cita
     const getTimeUntilAppointment = () => {
-        return appointmentService.calculateTimeUntilAppointment(
+        return calculateTimeUntilAppointment(
             appointment.appointmentDate,
             appointment.appointmentTime
         );

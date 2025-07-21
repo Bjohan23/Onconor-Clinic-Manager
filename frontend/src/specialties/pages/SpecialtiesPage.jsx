@@ -41,15 +41,26 @@ const SpecialtiesPage = () => {
                 filters
             );
             
-            setSpecialties(result.data?.specialties || []);
+            // Validación robusta de los datos recibidos
+            const specialtiesData = result?.data?.specialties || result?.specialties || [];
+            
+            // Asegurar que tenemos un array válido
+            if (Array.isArray(specialtiesData)) {
+                setSpecialties(specialtiesData);
+            } else {
+                console.warn('Specialties data is not an array:', specialtiesData);
+                setSpecialties([]);
+            }
+            
             setPagination(prev => ({
                 ...prev,
-                total: result.data?.pagination?.total || 0,
-                totalPages: result.data?.pagination?.totalPages || 0
+                total: result?.data?.pagination?.total || result?.pagination?.total || 0,
+                totalPages: result?.data?.pagination?.totalPages || result?.pagination?.totalPages || 0
             }));
         } catch (err) {
             console.error('Error loading specialties:', err);
             setError(err.message || 'Error al cargar las especialidades');
+            setSpecialties([]); // Asegurar que siempre sea un array
         } finally {
             setLoading(false);
         }
@@ -58,9 +69,10 @@ const SpecialtiesPage = () => {
     const loadStats = async () => {
         try {
             const statsData = await specialtyService.getSpecialtyStats();
-            setStats(statsData.data?.stats);
+            setStats(statsData?.data?.stats || statsData?.stats || null);
         } catch (err) {
             console.error('Error loading stats:', err);
+            // No mostrar error para stats, no es crítico
         }
     };
 
@@ -102,7 +114,7 @@ const SpecialtiesPage = () => {
             
             if (selectedSpecialty && selectedSpecialty.id === id) {
                 const updatedSpecialty = await specialtyService.getSpecialtyById(id);
-                setSelectedSpecialty(updatedSpecialty.data?.specialty);
+                setSelectedSpecialty(updatedSpecialty?.data?.specialty || null);
             }
         } catch (err) {
             console.error('Error updating specialty:', err);
@@ -144,11 +156,13 @@ const SpecialtiesPage = () => {
         try {
             setLoading(true);
             const fullSpecialty = await specialtyService.getSpecialtyWithDoctors(specialty.id);
-            setSelectedSpecialty(fullSpecialty.data?.specialty);
+            setSelectedSpecialty(fullSpecialty?.data?.specialty || specialty);
             setShowDetail(true);
         } catch (err) {
             console.error('Error loading specialty detail:', err);
-            setError(err.message || 'Error al cargar el detalle de la especialidad');
+            // Si falla la carga completa, usar los datos básicos
+            setSelectedSpecialty(specialty);
+            setShowDetail(true);
         } finally {
             setLoading(false);
         }
@@ -162,6 +176,28 @@ const SpecialtiesPage = () => {
     const handleCloseDetail = () => {
         setShowDetail(false);
         setSelectedSpecialty(null);
+    };
+
+    // Función para normalizar los datos de especialidades
+    const normalizeSpecialtyData = (specialtyArray) => {
+        if (!Array.isArray(specialtyArray)) {
+            return [];
+        }
+        
+        return specialtyArray.map(s => ({
+            id: s?.id || s?._id || null,
+            name: s?.name || '',
+            description: s?.description || '',
+            isActive: s?.isActive !== false, // Convierte a boolean, defaultea a true
+            doctorCount: s?.doctorCount || s?.doctor_count || 0,
+            createdAt: s?.createdAt || s?.created_at || new Date().toISOString(),
+            updatedAt: s?.updatedAt || s?.updated_at || new Date().toISOString(),
+            flg_deleted: s?.flg_deleted || false,
+            deleted_at: s?.deleted_at || null,
+            user_created: s?.user_created || null,
+            user_updated: s?.user_updated || null,
+            user_deleted: s?.user_deleted || null
+        }));
     };
 
     return (
@@ -260,9 +296,19 @@ const SpecialtiesPage = () => {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-sm font-medium opacity-70 uppercase tracking-wider">Con Médicos</p>
-                                        <p className="text-3xl font-bold mt-2 bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                                            {stats.withDoctors || 0}
-                                        </p>
+                                        {/* Renderiza la lista de especialidades con médicos correctamente */}
+                                        {Array.isArray(stats.withDoctors) && stats.withDoctors.length > 0 ? (
+                                            <ul className="mt-2 space-y-1">
+                                                {stats.withDoctors.map((s) => (
+                                                    <li key={s.id} className="text-white/90 text-sm flex items-center gap-2">
+                                                        <span className="font-semibold">{s.name}</span>
+                                                        <span className="text-blue-400">({s.doctorCount} médicos)</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p className="text-white/60 mt-2 text-sm">Ninguna especialidad con médicos asignados</p>
+                                        )}
                                     </div>
                                     <div className="w-12 h-12 bg-gradient-warning rounded-xl flex items-center justify-center">
                                         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -322,23 +368,10 @@ const SpecialtiesPage = () => {
 
                     {/* Modern Specialties List */}
                     <div className="glass rounded-3xl overflow-hidden card-hover">
-                        {/* Manejo seguro de la lista de especialidades */}
+                        {/* Validación robusta y normalización de datos */}
                         {Array.isArray(specialties) && specialties.length > 0 ? (
                             <SpecialtyList
-                                specialties={specialties.map(s => ({
-                                    id: s.id,
-                                    name: s.name,
-                                    description: s.description,
-                                    isActive: s.isActive,
-                                    doctorCount: s.doctorCount,
-                                    createdAt: s.createdAt || s.created_at,
-                                    updatedAt: s.updatedAt || s.updated_at,
-                                    flg_deleted: s.flg_deleted,
-                                    deleted_at: s.deleted_at,
-                                    user_created: s.user_created,
-                                    user_updated: s.user_updated,
-                                    user_deleted: s.user_deleted
-                                }))}
+                                specialties={normalizeSpecialtyData(specialties)}
                                 loading={loading}
                                 filters={filters}
                                 pagination={pagination}
@@ -356,11 +389,17 @@ const SpecialtiesPage = () => {
                         ) : loading ? (
                             <div className="flex items-center justify-center p-8">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
-                                <span className="ml-2">Cargando especialidades...</span>
+                                <span className="ml-2 text-white">Cargando especialidades...</span>
                             </div>
                         ) : (
-                            <div className="p-8 text-center text-gray-500">
-                                No hay especialidades disponibles
+                            <div className="p-8 text-center text-white/70">
+                                <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-600 rounded-full mx-auto mb-4 flex items-center justify-center opacity-50">
+                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m0 0h4M9 7h6m-6 4h6m-2 4h.01" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-xl font-semibold mb-2">No hay especialidades disponibles</h3>
+                                <p className="text-white/50">Agrega la primera especialidad médica al sistema</p>
                             </div>
                         )}
                     </div>
@@ -441,7 +480,7 @@ const SpecialtiesPage = () => {
             )}
 
             {/* CSS Animation Keyframes */}
-            <style jsx="true">{`
+            <style>{`
                 @keyframes gradient {
                     0% { background-position: 0% 50%; }
                     50% { background-position: 100% 50%; }
