@@ -3,6 +3,7 @@ const router = express.Router()
 
 // ========== IMPORTAR RUTAS ==========
 
+
 // Equipo 1: Usuarios y Autenticación
 const authRoutes = require('../auth/routes/authRoutes')
 const userRoutes = require('../users/routes/userRoutes')
