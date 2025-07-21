@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import appointmentService from '../../services/appointmentService';
+import { useTheme } from '../../shared/contexts/ThemeContext';
 
 const AppointmentList = ({
     appointments,
@@ -15,6 +16,7 @@ const AppointmentList = ({
     onCompleteAppointment,
     onEditAppointment
 }) => {
+    const { colors, isDarkMode } = useTheme();
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [appointmentToCancel, setAppointmentToCancel] = useState(null);
@@ -31,40 +33,100 @@ const AppointmentList = ({
         onFilterChange({ [field]: value });
     };
 
-    // Obtener badge del estado
+    // Obtener badge del estado con tema
     const getStatusBadge = (status) => {
         const statusConfig = {
-            'scheduled': { color: 'bg-gray-100 text-gray-800', text: 'Programada' },
-            'confirmed': { color: 'bg-blue-100 text-blue-800', text: 'Confirmada' },
-            'in_progress': { color: 'bg-yellow-100 text-yellow-800', text: 'En Progreso' },
-            'completed': { color: 'bg-green-100 text-green-800', text: 'Completada' },
-            'cancelled': { color: 'bg-red-100 text-red-800', text: 'Cancelada' },
-            'no_show': { color: 'bg-purple-100 text-purple-800', text: 'No Asistió' }
+            'scheduled': { 
+                bg: isDarkMode ? colors.gray[200] : colors.gray[100], 
+                text: isDarkMode ? colors.text.primary : colors.gray[700], 
+                label: 'Programada',
+                icon: '📅'
+            },
+            'confirmed': { 
+                bg: isDarkMode ? colors.primary[200] : colors.primary[100], 
+                text: isDarkMode ? colors.text.primary : colors.primary[700], 
+                label: 'Confirmada',
+                icon: '✅'
+            },
+            'in_progress': { 
+                bg: isDarkMode ? colors.warning[200] : colors.warning[50], 
+                text: isDarkMode ? colors.text.primary : colors.warning[600], 
+                label: 'En Progreso',
+                icon: '⏳'
+            },
+            'completed': { 
+                bg: isDarkMode ? colors.success[200] : colors.success[50], 
+                text: isDarkMode ? colors.text.primary : colors.success[600], 
+                label: 'Completada',
+                icon: '✅'
+            },
+            'cancelled': { 
+                bg: isDarkMode ? colors.error[200] : colors.error[50], 
+                text: isDarkMode ? colors.text.primary : colors.error[600], 
+                label: 'Cancelada',
+                icon: '❌'
+            },
+            'no_show': { 
+                bg: isDarkMode ? colors.gray[300] : colors.gray[100], 
+                text: isDarkMode ? colors.text.primary : colors.gray[600], 
+                label: 'No Asistió',
+                icon: '👻'
+            }
         };
 
         const config = statusConfig[status] || statusConfig['scheduled'];
         
         return (
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
-                {config.text}
+            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm" 
+                  style={{
+                      backgroundColor: config.bg,
+                      color: config.text
+                  }}>
+                <span>{config.icon}</span>
+                {config.label}
             </span>
         );
     };
 
-    // Obtener badge de prioridad
+    // Obtener badge de prioridad con tema
     const getPriorityBadge = (priority) => {
         const priorityConfig = {
-            'low': { color: 'bg-green-100 text-green-800', text: 'Baja' },
-            'normal': { color: 'bg-gray-100 text-gray-800', text: 'Normal' },
-            'high': { color: 'bg-yellow-100 text-yellow-800', text: 'Alta' },
-            'urgent': { color: 'bg-red-100 text-red-800', text: 'Urgente' }
+            'low': { 
+                bg: isDarkMode ? colors.success[200] : colors.success[50], 
+                text: isDarkMode ? colors.text.primary : colors.success[600], 
+                label: 'Baja',
+                icon: '🟢'
+            },
+            'normal': { 
+                bg: isDarkMode ? colors.gray[200] : colors.gray[100], 
+                text: isDarkMode ? colors.text.primary : colors.gray[600], 
+                label: 'Normal',
+                icon: '🔵'
+            },
+            'high': { 
+                bg: isDarkMode ? colors.warning[200] : colors.warning[50], 
+                text: isDarkMode ? colors.text.primary : colors.warning[600], 
+                label: 'Alta',
+                icon: '🟡'
+            },
+            'urgent': { 
+                bg: isDarkMode ? colors.error[200] : colors.error[50], 
+                text: isDarkMode ? colors.text.primary : colors.error[600], 
+                label: 'Urgente',
+                icon: '🔴'
+            }
         };
 
         const config = priorityConfig[priority] || priorityConfig['normal'];
         
         return (
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${config.color}`}>
-                {config.text}
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium" 
+                  style={{
+                      backgroundColor: config.bg,
+                      color: config.text
+                  }}>
+                <span>{config.icon}</span>
+                {config.label}
             </span>
         );
     };
@@ -111,66 +173,93 @@ const AppointmentList = ({
     };
 
     return (
-        <div className="bg-white">
-            {/* Filtros y búsqueda */}
-            <div className="p-6 border-b border-gray-200">
+        <div style={{ backgroundColor: colors.background.primary }}>
+            {/* Modern Filters and Search */}
+            <div className="p-6 border-b" style={{ borderColor: colors.border.light }}>
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    {/* Búsqueda */}
+                    {/* Modern Search */}
                     <form onSubmit={handleSearchSubmit} className="flex-1 max-w-lg">
                         <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <svg className="h-6 w-6" style={{ color: colors.text.tertiary }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
                             <input
                                 type="text"
-                                placeholder="Buscar por paciente, médico o motivo..."
+                                placeholder="🔍 Buscar por paciente, médico o motivo..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                className="block w-full pl-12 pr-4 py-3 border rounded-2xl leading-5 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                style={{
+                                    backgroundColor: colors.background.secondary,
+                                    borderColor: colors.border.light,
+                                    color: colors.text.primary,
+                                    focusRingColor: colors.primary[500]
+                                }}
                             />
                         </div>
                     </form>
 
-                    {/* Filtros */}
+                    {/* Modern Filters */}
                     <div className="flex flex-wrap gap-3">
                         <select
                             value={filters.status}
                             onChange={(e) => handleFilterChange('status', e.target.value)}
-                            className="block px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            className="block px-4 py-3 border rounded-2xl text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 min-w-[150px]"
+                            style={{
+                                backgroundColor: colors.background.secondary,
+                                borderColor: colors.border.light,
+                                color: colors.text.primary,
+                                focusRingColor: colors.primary[500]
+                            }}
                         >
-                            <option value="">Todos los estados</option>
-                            <option value="scheduled">Programada</option>
-                            <option value="confirmed">Confirmada</option>
-                            <option value="in_progress">En Progreso</option>
-                            <option value="completed">Completada</option>
-                            <option value="cancelled">Cancelada</option>
-                            <option value="no_show">No Asistió</option>
+                            <option value="">📋 Todos los estados</option>
+                            <option value="scheduled">📅 Programada</option>
+                            <option value="confirmed">✅ Confirmada</option>
+                            <option value="in_progress">⏳ En Progreso</option>
+                            <option value="completed">✅ Completada</option>
+                            <option value="cancelled">❌ Cancelada</option>
+                            <option value="no_show">👻 No Asistió</option>
                         </select>
 
                         <input
                             type="date"
                             value={filters.dateFrom}
                             onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-                            className="block px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            className="block px-4 py-3 border rounded-2xl text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                            style={{
+                                backgroundColor: colors.background.secondary,
+                                borderColor: colors.border.light,
+                                color: colors.text.primary,
+                                focusRingColor: colors.primary[500]
+                            }}
                         />
 
                         <input
                             type="date"
                             value={filters.dateTo}
                             onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-                            className="block px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            className="block px-4 py-3 border rounded-2xl text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                            style={{
+                                backgroundColor: colors.background.secondary,
+                                borderColor: colors.border.light,
+                                color: colors.text.primary,
+                                focusRingColor: colors.primary[500]
+                            }}
                         />
                     </div>
                 </div>
             </div>
 
-            {/* Loading */}
+            {/* Modern Loading */}
             {loading && (
-                <div className="flex justify-center items-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span className="ml-2 text-gray-600">Cargando citas...</span>
+                <div className="flex flex-col justify-center items-center py-16">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-t-4 mb-4" 
+                         style={{ borderColor: `${colors.primary[500]} transparent ${colors.primary[500]} transparent` }}>
+                    </div>
+                    <span className="text-lg font-semibold" style={{ color: colors.text.secondary }}>🏥 Cargando citas médicas...</span>
+                    <span className="text-sm mt-2" style={{ color: colors.text.tertiary }}>Por favor espere un momento</span>
                 </div>
             )}
 
@@ -178,124 +267,157 @@ const AppointmentList = ({
             {!loading && (
                 <>
                     {appointments.length === 0 ? (
-                        <div className="text-center py-12">
-                            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <h3 className="mt-2 text-sm font-medium text-gray-900">No hay citas</h3>
-                            <p className="mt-1 text-sm text-gray-500">No se encontraron citas con los filtros seleccionados.</p>
+                        <div className="text-center py-20">
+                            <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center" 
+                                 style={{ backgroundColor: colors.gray[100] }}>
+                                <span className="text-5xl">📅</span>
+                            </div>
+                            <h3 className="text-xl font-bold mb-3" style={{ color: colors.text.primary }}>No hay citas disponibles</h3>
+                            <p className="text-base mb-6" style={{ color: colors.text.secondary }}>No se encontraron citas médicas con los filtros seleccionados.</p>
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="px-6 py-3 rounded-2xl font-semibold transition-all duration-200 hover:transform hover:scale-105"
+                                style={{
+                                    backgroundColor: colors.primary[500],
+                                    color: 'white'
+                                }}
+                            >
+                                🔄 Actualizar lista
+                            </button>
                         </div>
                     ) : (
-                        <div className="overflow-hidden">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                        <div className="overflow-x-auto">
+                            <table className="w-full table-auto divide-y" style={{ backgroundColor: colors.background.primary, borderColor: colors.border.light }}>
+                                <thead style={{ backgroundColor: colors.background.secondary }}>
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Fecha y Hora
+                                        <th className="px-3 py-4 text-left text-xs font-bold uppercase tracking-wider min-w-[140px]" style={{ color: colors.text.secondary }}>
+                                            📅 Fecha y Hora
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Paciente
+                                        <th className="px-3 py-4 text-left text-xs font-bold uppercase tracking-wider min-w-[120px]" style={{ color: colors.text.secondary }}>
+                                            👤 Paciente
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Médico
+                                        <th className="px-3 py-4 text-left text-xs font-bold uppercase tracking-wider min-w-[140px]" style={{ color: colors.text.secondary }}>
+                                            👨‍⚕️ Médico
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Motivo
+                                        <th className="px-3 py-4 text-left text-xs font-bold uppercase tracking-wider" style={{ color: colors.text.secondary }}>
+                                            📝 Motivo
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Estado
+                                        <th className="px-3 py-4 text-left text-xs font-bold uppercase tracking-wider min-w-[120px]" style={{ color: colors.text.secondary }}>
+                                            📊 Estado
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Prioridad
+                                        <th className="px-3 py-4 text-left text-xs font-bold uppercase tracking-wider min-w-[100px]" style={{ color: colors.text.secondary }}>
+                                            ⚡ Prioridad
                                         </th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Acciones
+                                        <th className="px-3 py-4 text-right text-xs font-bold uppercase tracking-wider min-w-[200px]" style={{ color: colors.text.secondary }}>
+                                            🔧 Acciones
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {appointments.map((appointment) => (
+                                <tbody className="divide-y" style={{ backgroundColor: colors.background.primary, borderColor: colors.border.light }}>
+                                    {appointments.map((appointment, index) => (
                                         <tr 
                                             key={appointment.id} 
-                                            className="hover:bg-gray-50 cursor-pointer"
+                                            className="cursor-pointer" 
+                                            style={{
+                                                backgroundColor: index % 2 === 0 
+                                                    ? colors.background.primary 
+                                                    : colors.background.secondary
+                                            }}
                                             onClick={() => onSelectAppointment(appointment)}
                                         >
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {formatDateTime(appointment.appointmentDate, appointment.appointmentTime)}
+                                            <td className="px-3 py-4 text-sm">
+                                                <div className="font-semibold" style={{ color: colors.text.primary }}>
+                                                    {formatDateTime(appointment.appointmentDate, appointment.appointmentTime)}
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-900">
+                                            <td className="px-3 py-4">
+                                                <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
                                                     {appointment.patientName || 'Sin paciente'}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">
+                                            <td className="px-3 py-4">
+                                                <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
                                                     {appointment.doctorName || 'Sin médico'}
                                                 </div>
-                                                <div className="text-sm text-gray-500">
+                                                <div className="text-xs" style={{ color: colors.text.secondary }}>
                                                     {appointment.specialtyName || 'Sin especialidad'}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                                                {appointment.reason}
+                                            <td className="px-3 py-4">
+                                                <div className="text-sm" style={{ color: colors.text.primary }}>
+                                                    {appointment.reason || 'Sin motivo especificado'}
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-3 py-4">
                                                 {getStatusBadge(appointment.status)}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-3 py-4">
                                                 {getPriorityBadge(appointment.priority)}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <td className="px-6 py-5 whitespace-nowrap text-right text-sm font-medium">
                                                 <div className="flex justify-end space-x-2">
-                                                    {/* Botón Confirmar */}
+                                                    {/* Modern Action Buttons */}
                                                     {appointment.status === 'scheduled' && (
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 onConfirmAppointment(appointment.id);
                                                             }}
-                                                            className="text-blue-600 hover:text-blue-900 text-xs px-2 py-1 border border-blue-200 rounded hover:bg-blue-50"
+                                                            className="text-xs px-3 py-2 rounded-xl font-semibold transition-all duration-200 hover:transform hover:scale-105 shadow-sm"
+                                                            style={{
+                                                                backgroundColor: colors.primary[500],
+                                                                color: 'white'
+                                                            }}
                                                         >
-                                                            Confirmar
+                                                            ✅ Confirmar
                                                         </button>
                                                     )}
 
-                                                    {/* Botón Completar */}
                                                     {['confirmed', 'in_progress'].includes(appointment.status) && (
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 onCompleteAppointment(appointment.id, '');
                                                             }}
-                                                            className="text-green-600 hover:text-green-900 text-xs px-2 py-1 border border-green-200 rounded hover:bg-green-50"
+                                                            className="text-xs px-3 py-2 rounded-xl font-semibold transition-all duration-200 hover:transform hover:scale-105 shadow-sm"
+                                                            style={{
+                                                                backgroundColor: colors.success[500],
+                                                                color: 'white'
+                                                            }}
                                                         >
-                                                            Completar
+                                                            ✅ Completar
                                                         </button>
                                                     )}
 
-                                                    {/* Botón Editar */}
                                                     {!['completed', 'cancelled'].includes(appointment.status) && (
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 onEditAppointment(appointment);
                                                             }}
-                                                            className="text-gray-600 hover:text-gray-900 text-xs px-2 py-1 border border-gray-200 rounded hover:bg-gray-50"
+                                                            className="text-xs px-3 py-2 rounded-xl font-semibold transition-all duration-200 hover:transform hover:scale-105 shadow-sm"
+                                                            style={{
+                                                                backgroundColor: colors.warning[500],
+                                                                color: 'white'
+                                                            }}
                                                         >
-                                                            Editar
+                                                            ✏️ Editar
                                                         </button>
                                                     )}
 
-                                                    {/* Botón Cancelar */}
                                                     {!['completed', 'cancelled'].includes(appointment.status) && (
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 handleCancelClick(appointment);
                                                             }}
-                                                            className="text-red-600 hover:text-red-900 text-xs px-2 py-1 border border-red-200 rounded hover:bg-red-50"
+                                                            className="text-xs px-3 py-2 rounded-xl font-semibold transition-all duration-200 hover:transform hover:scale-105 shadow-sm"
+                                                            style={{
+                                                                backgroundColor: colors.error[500],
+                                                                color: 'white'
+                                                            }}
                                                         >
-                                                            Cancelar
+                                                            ❌ Cancelar
                                                         </button>
                                                     )}
                                                 </div>
@@ -307,9 +429,13 @@ const AppointmentList = ({
                         </div>
                     )}
 
-                    {/* Paginación */}
+                    {/* Modern Pagination */}
                     {pagination.totalPages > 1 && (
-                        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                        <div className="px-6 py-4 flex items-center justify-between border-t" 
+                             style={{
+                                 backgroundColor: colors.background.primary,
+                                 borderColor: colors.border.light
+                             }}>
                             <div className="flex-1 flex justify-between sm:hidden">
                                 <button
                                     onClick={() => onPageChange(pagination.page - 1)}

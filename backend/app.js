@@ -32,10 +32,30 @@ const app = express();
 
 
 // Configuración de CORS
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://km-variety-neither-threshold.trycloudflare.com',
+    'https://score-pages-within-impacts.trycloudflare.com'
+];
+
 app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: function (origin, callback) {
+        // Permitir requests sin origin (como apps móviles o Postman)
+        if (!origin) return callback(null, true);
+        
+        // Permitir cualquier origin en desarrollo o si está en la lista
+        if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+            return callback(null, true);
+        }
+        
+        // Si no está permitido, devolver error
+        const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+        return callback(new Error(msg), false);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
     optionsSuccessStatus: 200
 }));
 app.get('/', (req, res) => {

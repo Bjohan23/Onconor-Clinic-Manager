@@ -3,7 +3,7 @@ import axios from 'axios'
 // Configuración base de Axios
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/v1/api',
-  timeout: 10000,
+  timeout: import.meta.env.VITE_API_TIMEOUT || 10000,
   headers: {
     'Content-Type': 'application/json',
   },

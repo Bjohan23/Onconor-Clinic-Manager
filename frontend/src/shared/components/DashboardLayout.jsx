@@ -196,58 +196,67 @@ export const DashboardLayout = ({ children }) => {
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-2">
-          {navigation.map((item) => {
-            const active = isActive(item.href) && !item.disabled
-            
-            return (
-              <Link
-                key={item.name}
-                to={item.disabled ? '#' : item.href}
-                className={`
-                  group flex items-center px-4 py-4 text-sm font-medium rounded-2xl transition-all duration-300
-                  ${item.disabled ? 'opacity-40 cursor-not-allowed' : 'hover:transform hover:scale-105 card-hover'}
-                  ${active ? 'shadow-xl transform scale-105 neon-blue' : ''}
-                `}
-                style={{
-                  background: active 
-                    ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%)'
-                    : item.disabled 
-                      ? 'transparent'
-                      : 'rgba(255, 255, 255, 0.05)',
-                  backdropFilter: active ? 'blur(20px)' : 'blur(10px)',
-                  border: active ? '1px solid rgba(102, 126, 234, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
-                  color: active ? '#ffffff' : '#cbd5e1',
-                  boxShadow: active ? '0 0 30px rgba(102, 126, 234, 0.4)' : 'none'
-                }}
-                onClick={(e) => item.disabled && e.preventDefault()}
-              >
-                <span className="mr-3 flex-shrink-0">{item.icon}</span>
-                {sidebarOpen && (
-                  <span className="truncate">{item.name}</span>
-                )}
-                {!sidebarOpen && !item.disabled && (
-                  <div className="absolute left-16 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {item.name}
-                  </div>
-                )}
-              </Link>
-            )
-          })}
+        {/* Navigation - Scrollable */}
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6">
+          <div className="space-y-2" style={{ paddingBottom: '80px' }}>
+            {navigation.map((item) => {
+              const active = isActive(item.href) && !item.disabled
+              
+              return (
+                <Link
+                  key={item.name}
+                  to={item.disabled ? '#' : item.href}
+                  className={`
+                    group relative flex items-center rounded-2xl transition-all duration-300
+                    ${sidebarOpen ? 'px-4 py-4' : 'px-3 py-4 justify-center'}
+                    text-sm font-medium
+                    ${item.disabled ? 'opacity-40 cursor-not-allowed' : 'hover:transform hover:scale-105 card-hover'}
+                    ${active ? 'shadow-xl transform scale-105 neon-blue' : ''}
+                  `}
+                  style={{
+                    background: active 
+                      ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%)'
+                      : item.disabled 
+                        ? 'transparent'
+                        : 'rgba(255, 255, 255, 0.05)',
+                    backdropFilter: active ? 'blur(20px)' : 'blur(10px)',
+                    border: active ? '1px solid rgba(102, 126, 234, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
+                    color: active ? '#ffffff' : '#cbd5e1',
+                    boxShadow: active ? '0 0 30px rgba(102, 126, 234, 0.4)' : 'none'
+                  }}
+                  onClick={(e) => item.disabled && e.preventDefault()}
+                  title={!sidebarOpen ? item.name : undefined}
+                >
+                  <span className={`flex-shrink-0 ${sidebarOpen ? 'mr-3' : ''}`}>{item.icon}</span>
+                  {sidebarOpen && (
+                    <span className="truncate">{item.name}</span>
+                  )}
+                  {!sidebarOpen && !item.disabled && (
+                    <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                      {item.name}
+                    </div>
+                  )}
+                </Link>
+              )
+            })}
+          </div>
         </nav>
 
-        {/* Theme Toggle */}
-        <div className="px-4 py-4 border-t" style={{ borderColor: colors.border.light }}>
+        {/* Theme Toggle - Fixed at bottom */}
+        <div className="px-4 py-4 border-t bg-inherit" style={{ borderColor: colors.border.light }}>
           <button
             onClick={toggleTheme}
-            className="w-full flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200 hover:shadow-md"
+            className={`
+              group relative w-full flex items-center text-sm font-medium rounded-xl transition-all duration-200 hover:shadow-md
+              ${sidebarOpen ? 'px-3 py-3' : 'px-3 py-3 justify-center'}
+            `}
             style={{ 
               backgroundColor: colors.background.secondary,
               color: colors.text.secondary
             }}
+            title={!sidebarOpen ? (isDarkMode ? 'Modo claro' : 'Modo oscuro') : undefined}
           >
-            <span className="mr-3 flex-shrink-0">
+            <span className={`flex-shrink-0 ${sidebarOpen ? 'mr-3' : ''}`}>
               {isDarkMode ? (
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
@@ -262,6 +271,11 @@ export const DashboardLayout = ({ children }) => {
               <span className="truncate">
                 {isDarkMode ? 'Modo claro' : 'Modo oscuro'}
               </span>
+            )}
+            {!sidebarOpen && (
+              <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                {isDarkMode ? 'Modo claro' : 'Modo oscuro'}
+              </div>
             )}
           </button>
         </div>

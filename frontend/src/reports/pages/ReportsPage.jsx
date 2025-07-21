@@ -138,7 +138,7 @@ const ReportsPage = () => {
             </div>
 
             {/* Main Content */}
-            <div className="relative z-10 p-6">
+            <div className="relative z-1 p-6">
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <div className="mb-8">

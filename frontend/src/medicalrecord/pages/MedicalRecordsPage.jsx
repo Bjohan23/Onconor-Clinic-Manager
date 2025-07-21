@@ -37,9 +37,12 @@ const MedicalRecordsPage = () => {
         itemsPerPage,
         filters
       );
-      setRecords(response.data?.records || []);
-      setTotalPages(response.data?.pagination?.totalPages || 1);
-      setTotalItems(response.data?.pagination?.total || 0);
+      // El interceptor de apiClient ya retorna response.data, así que response ES el array directamente
+      const records = Array.isArray(response) ? response : [];
+      setRecords(records);
+      // Como no hay paginación real del API, calculamos valores por defecto
+      setTotalPages(1);
+      setTotalItems(records.length);
     } catch (err) {
       setError('Error al cargar los historiales médicos');
     } finally {
@@ -66,11 +69,54 @@ const MedicalRecordsPage = () => {
   };
 
   const columns = [
-    { key: 'id', title: 'ID' },
-    { key: 'patientId', title: 'Paciente' },
-    { key: 'doctorId', title: 'Médico' },
-    { key: 'diagnosis', title: 'Diagnóstico' },
-    { key: 'created_at', title: 'Fecha Registro' },
+    { 
+      key: 'id', 
+      title: 'ID',
+      render: (value) => `#${value}`
+    },
+    { 
+      key: 'patientId', 
+      title: 'Paciente ID',
+      render: (value) => `Paciente ${value}`
+    },
+    { 
+      key: 'doctorId', 
+      title: 'Médico ID',
+      render: (value) => `Doctor ${value}`
+    },
+    { 
+      key: 'diagnosis', 
+      title: 'Diagnóstico',
+      render: (value) => (
+        <div className="max-w-xs truncate" title={value}>
+          {value}
+        </div>
+      )
+    },
+    { 
+      key: 'symptoms', 
+      title: 'Síntomas',
+      render: (value) => (
+        <div className="max-w-xs truncate" title={value}>
+          {value || 'No especificado'}
+        </div>
+      )
+    },
+    { 
+      key: 'date', 
+      title: 'Fecha',
+      render: (value) => {
+        if (!value) return 'No especificada';
+        const date = new Date(value);
+        return date.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    },
     {
       key: 'actions',
       title: 'Acciones',
