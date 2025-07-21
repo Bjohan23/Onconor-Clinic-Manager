@@ -1,5 +1,6 @@
 const { Doctor, User, Specialty } = require('../../shared/models');
 const { Op, fn, col } = require('sequelize');
+const Schedule = require('../../appointments/models/schedule');
 
 class DoctorRepository {
     
@@ -361,6 +362,26 @@ class DoctorRepository {
             };
         } catch (error) {
             throw new Error(`Error al obtener estadísticas de médicos: ${error.message}`);
+        }
+    }
+
+    // Obtener horarios por doctor
+    async getSchedulesByDoctorId(doctorId) {
+        try {
+            const ScheduleModel = Schedule();
+            const schedules = await ScheduleModel.findAll({
+                where: {
+                    doctorId: doctorId,
+                    flg_deleted: false
+                },
+                order: [
+                    ['dayOfWeek', 'ASC'],
+                    ['startTime', 'ASC']
+                ]
+            });
+            return schedules;
+        } catch (error) {
+            throw new Error(`Error al obtener horarios del doctor: ${error.message}`);
         }
     }
 }
