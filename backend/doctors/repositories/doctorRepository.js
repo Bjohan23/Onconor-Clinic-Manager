@@ -1,5 +1,5 @@
 const { Doctor, User, Specialty } = require('../../shared/models');
-const { Op } = require('sequelize');
+const { Op, fn, col } = require('sequelize');
 
 class DoctorRepository {
     
@@ -339,7 +339,7 @@ class DoctorRepository {
             const doctorsBySpecialty = await Doctor.findAll({
                 attributes: [
                     'specialtyId',
-                    [Doctor.sequelize.fn('COUNT', Doctor.sequelize.col('Doctor.id')), 'count']
+                    [fn('COUNT', col('doctors.id')), 'count']
                 ],
                 where: { 
                     flg_deleted: false,
@@ -350,7 +350,7 @@ class DoctorRepository {
                     as: 'specialty',
                     attributes: ['name']
                 }],
-                group: ['specialtyId', 'specialty.id']
+                group: ['doctors.specialty_id', 'specialty.id', 'specialty.name']
             });
 
             return {

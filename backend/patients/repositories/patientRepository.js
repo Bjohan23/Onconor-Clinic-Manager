@@ -1,5 +1,5 @@
 const { Patient, User } = require('../../shared/models');
-const { Op } = require('sequelize');
+const { Op, fn, col } = require('sequelize');
 
 class PatientRepository {
     
@@ -259,13 +259,13 @@ class PatientRepository {
             const patientsByGender = await Patient.findAll({
                 attributes: [
                     'gender',
-                    [Patient.sequelize.fn('COUNT', Patient.sequelize.col('id')), 'count']
+                    [fn('COUNT', col('patients.id')), 'count']
                 ],
                 where: { 
                     flg_deleted: false,
                     active: true
                 },
-                group: ['gender']
+                group: ['patients.gender']
             });
 
             return {

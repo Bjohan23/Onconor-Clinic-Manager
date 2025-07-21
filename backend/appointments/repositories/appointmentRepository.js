@@ -1,5 +1,5 @@
 const { sequelize } = require('../../config/database');
-const { Op } = require('sequelize');
+const { Op, fn, col } = require('sequelize');
 
 class AppointmentRepository {
     
@@ -444,13 +444,13 @@ class AppointmentRepository {
             const appointmentsByStatus = await Appointment.findAll({
                 attributes: [
                     'status',
-                    [Appointment.sequelize.fn('COUNT', Appointment.sequelize.col('id')), 'count']
+                    [fn('COUNT', col('appointments.id')), 'count']
                 ],
                 where: { 
                     flg_deleted: false,
                     active: true
                 },
-                group: ['status'],
+                group: ['appointments.status'],
                 raw: true
             });
 
