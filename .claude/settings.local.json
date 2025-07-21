@@ -12,7 +12,8 @@
       "Bash(pkill:*)",
       "Bash(node:*)",
       "Bash(npx vite:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(timeout 15 npm run dev)"
     ],
     "deny": []
   }

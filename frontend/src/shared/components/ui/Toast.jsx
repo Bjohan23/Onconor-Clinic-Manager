@@ -240,4 +240,8 @@ const ConfirmationToast = ({ message, onConfirm, onCancel }) => {
   )
 }
 
+// Exportaciones nombradas
+export { Toast }
+
+// Exportación por defecto
 export default Toast

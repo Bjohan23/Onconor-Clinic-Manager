@@ -8,6 +8,7 @@ import { Input, TextArea } from '../../shared/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '../../shared/components/ui/Card';
 import { patientService } from '../../patients/services/patientService';
 import { doctorService } from '../../doctors/services/doctorService';
+import { treatmentService } from '../../treatment/services/treatmentService';
 
 const CreatePrescriptionPage = () => {
   const { colors } = useTheme();
@@ -17,21 +18,36 @@ const CreatePrescriptionPage = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
+    treatmentId: '',
     patientId: '',
     doctorId: '',
     medication: '',
     dosage: '',
-    notes: '',
+    frequency: '',
+    duration: '',
+    instructions: '',
   });
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
+  const [treatments, setTreatments] = useState([]);
 
   useEffect(() => {
     async function fetchOptions() {
-      const pRes = await patientService.getActivePatients();
-      const dRes = await doctorService.getActiveDoctors();
-      setPatients(pRes.data?.patients || []);
-      setDoctors(dRes.data?.doctors || []);
+      try {
+        const pRes = await patientService.getActivePatients();
+        const dRes = await doctorService.getActiveDoctors();
+        const tRes = await treatmentService.getAll();
+        
+        console.log('Treatments response:', tRes); // Debug log
+        
+        setPatients(pRes.data?.patients || []);
+        setDoctors(dRes.data?.doctors || []);
+        // Try multiple possible response structures
+        setTreatments(tRes.data?.treatments || tRes.data || tRes || []);
+      } catch (error) {
+        console.error('Error fetching options:', error);
+        setTreatments([]);
+      }
     }
     fetchOptions();
   }, []);
@@ -46,10 +62,11 @@ const CreatePrescriptionPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.patientId) newErrors.patientId = 'El paciente es obligatorio';
-    if (!formData.doctorId) newErrors.doctorId = 'El médico es obligatorio';
+    if (!formData.treatmentId) newErrors.treatmentId = 'El tratamiento es obligatorio';
     if (!formData.medication.trim()) newErrors.medication = 'El medicamento es obligatorio';
     if (!formData.dosage.trim()) newErrors.dosage = 'La dosis es obligatoria';
+    if (!formData.frequency.trim()) newErrors.frequency = 'La frecuencia es obligatoria';
+    if (!formData.duration.trim()) newErrors.duration = 'La duración es obligatoria';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -60,19 +77,21 @@ const CreatePrescriptionPage = () => {
     setLoading(true);
     try {
       const response = await prescriptionService.create(formData);
-      if (response.success) {
+      // API returns the created prescription object directly
+      if (response.data || response.id) {
         toast.success('Prescripción creada exitosamente');
         navigate('/prescriptions');
       } else {
-        setErrors({ submit: response.message || 'Error al crear la prescripción' });
+        setErrors({ submit: 'Error al crear la prescripción' });
       }
     } catch (err) {
-      setErrors({ submit: 'Error de conexión. Inténtalo nuevamente.' });
+      console.error('Error creating prescription:', err);
+      setErrors({ submit: err.response?.data?.message || 'Error de conexión. Inténtalo nuevamente.' });
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -109,30 +128,31 @@ const CreatePrescriptionPage = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <select
-                name="patientId"
-                value={formData.patientId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona un paciente</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>{p.fullName || `${p.firstName} ${p.lastName}`}</option>
-                ))}
-              </select>
-              <select
-                name="doctorId"
-                value={formData.doctorId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona un médico</option>
-                {doctors.map((d) => (
-                  <option key={d.id} value={d.id}>{d.fullName || `${d.firstName} ${d.lastName}`}</option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text.primary }}>
+                  Tratamiento *
+                </label>
+                <select
+                  name="treatmentId"
+                  value={formData.treatmentId}
+                  onChange={handleChange}
+                  required
+                  className="input-modern"
+                  style={{ color: errors.treatmentId ? colors.error[600] : colors.text.primary }}
+                >
+                  <option value="">Selecciona un tratamiento</option>
+                  {treatments.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.description || t.name || `Tratamiento ${t.id}`}
+                    </option>
+                  ))}
+                </select>
+                {errors.treatmentId && (
+                  <p className="text-sm mt-1" style={{ color: colors.error[600] }}>
+                    {errors.treatmentId}
+                  </p>
+                )}
+              </div>
               <Input
                 label="Medicamento"
                 name="medication"
@@ -151,12 +171,35 @@ const CreatePrescriptionPage = () => {
                 onChange={handleChange}
                 error={errors.dosage}
               />
-              <TextArea
-                label="Notas"
-                name="notes"
-                value={formData.notes}
+              <Input
+                label="Frecuencia"
+                name="frequency"
+                type="text"
+                required
+                placeholder="Ej: Cada 8 horas"
+                value={formData.frequency}
                 onChange={handleChange}
+                error={errors.frequency}
               />
+              <Input
+                label="Duración"
+                name="duration"
+                type="text"
+                required
+                placeholder="Ej: 7 días"
+                value={formData.duration}
+                onChange={handleChange}
+                error={errors.duration}
+              />
+              <div className="md:col-span-2">
+                <TextArea
+                  label="Instrucciones"
+                  name="instructions"
+                  value={formData.instructions}
+                  onChange={handleChange}
+                  placeholder="Instrucciones adicionales para el paciente..."
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -20,6 +20,7 @@ module.exports = {
       underscored: true,
       underscoredAll: true,
       freezeTableName: true,
+      indexes: [], // Prevent automatic index creation
     },
     dialectOptions: {
       ssl: process.env.DB_SSL === 'true' ? {
@@ -63,6 +64,7 @@ module.exports = {
       underscored: true,
       underscoredAll: true,
       freezeTableName: true,
+      indexes: [], // Prevent automatic index creation
     },
     dialectOptions: {
       ssl: process.env.DB_SSL === 'true' ? {
