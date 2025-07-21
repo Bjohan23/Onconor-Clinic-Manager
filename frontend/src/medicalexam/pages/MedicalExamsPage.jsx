@@ -37,9 +37,11 @@ const MedicalExamsPage = () => {
         itemsPerPage,
         filters
       );
-      setExams(response.data?.exams || []);
-      setTotalPages(response.data?.pagination?.totalPages || 1);
-      setTotalItems(response.data?.pagination?.total || 0);
+      // El API devuelve { success: true, data: { exams: [...] } }
+      const exams = response.data?.exams || [];
+      setExams(exams);
+      setTotalPages(1); // Sin paginación real del API
+      setTotalItems(exams.length);
     } catch (err) {
       setError('Error al cargar los exámenes médicos');
     } finally {
@@ -66,14 +68,79 @@ const MedicalExamsPage = () => {
   };
 
   const columns = [
-    { key: 'id', title: 'ID' },
-    { key: 'patientId', title: 'Paciente' },
-    { key: 'examType', title: 'Tipo de Examen' },
-    { key: 'result', title: 'Resultado' },
-    { key: 'created_at', title: 'Fecha Registro' },
+    { 
+      key: 'id', 
+      title: 'ID',
+      render: (value) => `#${value}`
+    },
+    { 
+      key: 'patient', 
+      title: '👤 Paciente',
+      render: (value, exam) => (
+        <div>
+          <div className="font-semibold" style={{ color: colors.text.primary }}>
+            {exam.patient?.fullName || `Historial #${exam.medicalRecordId}`}
+          </div>
+          {exam.patient?.dni && (
+            <div className="text-xs" style={{ color: colors.text.secondary }}>
+              DNI: {exam.patient.dni}
+            </div>
+          )}
+        </div>
+      )
+    },
+    { 
+      key: 'doctor', 
+      title: '👨‍⚕️ Médico',
+      render: (value, exam) => (
+        <div>
+          <div className="font-semibold" style={{ color: colors.text.primary }}>
+            {exam.doctor?.fullName || 'No asignado'}
+          </div>
+          {exam.doctor?.specialty?.name && (
+            <div className="text-xs" style={{ color: colors.text.secondary }}>
+              {exam.doctor.specialty.name}
+            </div>
+          )}
+        </div>
+      )
+    },
+    { 
+      key: 'examType', 
+      title: '🔬 Tipo de Examen',
+      render: (value) => (
+        <div className="font-semibold" style={{ color: colors.text.primary }}>
+          {value}
+        </div>
+      )
+    },
+    { 
+      key: 'results', 
+      title: '📋 Resultados',
+      render: (value) => (
+        <div className="max-w-xs truncate" title={value}>
+          {value || 'Sin resultados'}
+        </div>
+      )
+    },
+    { 
+      key: 'examDate', 
+      title: '📅 Fecha Examen',
+      render: (value) => {
+        if (!value) return 'No especificada';
+        const date = new Date(value);
+        return date.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    },
     {
       key: 'actions',
-      title: 'Acciones',
+      title: '🔧 Acciones',
       render: (_, exam) => (
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => navigate(`/medical-exams/edit/${exam.id}`)}>

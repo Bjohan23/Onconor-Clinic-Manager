@@ -7,8 +7,6 @@ import { Button } from '../../shared/components/ui/Button';
 import { Input, TextArea } from '../../shared/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '../../shared/components/ui/Card';
 import { LoadingSpinner } from '../../shared/components/LoadingSpinner';
-import { patientService } from '../../patients/services/patientService';
-import { doctorService } from '../../doctors/services/doctorService';
 
 const EditMedicalExamPage = () => {
   const { colors } = useTheme();
@@ -21,49 +19,38 @@ const EditMedicalExamPage = () => {
   const [errors, setErrors] = useState({});
   const [exam, setExam] = useState(null);
   const [formData, setFormData] = useState({
-    patientId: '',
-    doctorId: '',
+    medicalRecordId: '',
     examType: '',
-    result: '',
+    results: '',
+    examDate: '',
     notes: '',
   });
-  const [patients, setPatients] = useState([]);
-  const [doctors, setDoctors] = useState([]);
-
   useEffect(() => {
     if (id) fetchExam();
   }, [id]);
-
-  useEffect(() => {
-    async function fetchOptions() {
-      const pRes = await patientService.getActivePatients();
-      const dRes = await doctorService.getActiveDoctors();
-      setPatients(pRes.data?.patients || []);
-      setDoctors(dRes.data?.doctors || []);
-    }
-    fetchOptions();
-  }, []);
 
   const fetchExam = async () => {
     try {
       setLoadingExam(true);
       const response = await medicalExamService.getById(id);
-      if (response.success) {
-        const data = response.data?.medicalExam;
-        setExam(data);
+      // El API devuelve { success: true, data: { exam: {...} } }
+      if (response.success && response.data?.exam) {
+        const examData = response.data.exam;
+        setExam(examData);
         setFormData({
-          patientId: data.patientId || '',
-          doctorId: data.doctorId || '',
-          examType: data.examType || '',
-          result: data.result || '',
-          notes: data.notes || '',
+          medicalRecordId: examData.medicalRecordId || '',
+          examType: examData.examType || '',
+          results: examData.results || '',
+          examDate: examData.examDate ? examData.examDate.slice(0, 16) : '', // Formato para datetime-local
+          notes: examData.notes || '',
         });
       } else {
-        toast.error(response.message || 'Error al cargar el examen');
+        toast.error('Error al cargar el examen médico');
         navigate('/medical-exams');
       }
     } catch (err) {
-      toast.error('Error de conexión al cargar el examen');
+      console.error('Error fetching medical exam:', err);
+      toast.error('Error de conexión al cargar el examen médico');
       navigate('/medical-exams');
     } finally {
       setLoadingExam(false);
@@ -80,10 +67,8 @@ const EditMedicalExamPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.patientId) newErrors.patientId = 'El paciente es obligatorio';
-    if (!formData.doctorId) newErrors.doctorId = 'El médico es obligatorio';
+    if (!formData.medicalRecordId) newErrors.medicalRecordId = 'El historial médico es obligatorio';
     if (!formData.examType.trim()) newErrors.examType = 'El tipo de examen es obligatorio';
-    if (!formData.result.trim()) newErrors.result = 'El resultado es obligatorio';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -94,14 +79,16 @@ const EditMedicalExamPage = () => {
     setLoading(true);
     try {
       const response = await medicalExamService.update(id, formData);
-      if (response.success) {
+      // El API devuelve { success: true, data: { exam: {...} } }
+      if (response.success && response.data?.exam) {
         toast.success('Examen médico actualizado exitosamente');
         navigate('/medical-exams');
       } else {
-        setErrors({ submit: response.message || 'Error al actualizar el examen médico' });
+        setErrors({ submit: response?.message || 'Error al actualizar el examen médico' });
       }
     } catch (err) {
-      setErrors({ submit: 'Error de conexión. Inténtalo nuevamente.' });
+      console.error('Error updating medical exam:', err);
+      setErrors({ submit: err?.message || 'Error de conexión. Inténtalo nuevamente.' });
     } finally {
       setLoading(false);
     }
@@ -167,53 +154,107 @@ const EditMedicalExamPage = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <select
-                name="patientId"
-                value={formData.patientId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona un paciente</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>{p.fullName || `${p.firstName} ${p.lastName}`}</option>
-                ))}
-              </select>
-              <select
-                name="doctorId"
-                value={formData.doctorId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona un médico</option>
-                {doctors.map((d) => (
-                  <option key={d.id} value={d.id}>{d.fullName || `${d.firstName} ${d.lastName}`}</option>
-                ))}
-              </select>
+              {/* Información del paciente (solo lectura) */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  👤 Paciente
+                </label>
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: colors.background.secondary, 
+                  borderColor: colors.border.light 
+                }}>
+                  <div className="font-semibold" style={{ color: colors.text.primary }}>
+                    {exam?.patient?.fullName || `Historial #${formData.medicalRecordId}`}
+                  </div>
+                  {exam?.patient?.dni && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      DNI: {exam.patient.dni}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Información del doctor (solo lectura) */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  👨‍⚕️ Médico
+                </label>
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: colors.background.secondary, 
+                  borderColor: colors.border.light 
+                }}>
+                  <div className="font-semibold" style={{ color: colors.text.primary }}>
+                    {exam?.doctor?.fullName || 'No asignado'}
+                  </div>
+                  {exam?.doctor?.specialty?.name && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      {exam.doctor.specialty.name}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Historial Médico (solo lectura) */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  📋 Historial Médico
+                </label>
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: colors.background.secondary, 
+                  borderColor: colors.border.light 
+                }}>
+                  <div className="font-semibold" style={{ color: colors.text.primary }}>
+                    Historial #{formData.medicalRecordId}
+                  </div>
+                  {exam?.medicalRecord?.diagnosis && (
+                    <div className="text-sm mt-1" style={{ color: colors.text.secondary }}>
+                      Diagnóstico: {exam.medicalRecord.diagnosis}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Tipo de Examen (editable) */}
               <Input
-                label="Tipo de Examen"
+                label="🔬 Tipo de Examen"
                 name="examType"
                 type="text"
                 required
                 value={formData.examType}
                 onChange={handleChange}
                 error={errors.examType}
+                placeholder="Nombre del tipo de examen..."
               />
+
+              {/* Fecha del Examen (editable) */}
               <Input
-                label="Resultado"
-                name="result"
-                type="text"
-                required
-                value={formData.result}
+                label="📅 Fecha del Examen"
+                name="examDate"
+                type="datetime-local"
+                value={formData.examDate}
                 onChange={handleChange}
-                error={errors.result}
               />
+            </div>
+
+            {/* Resultados (campo completo) */}
+            <div className="mt-6">
               <TextArea
-                label="Notas"
+                label="📋 Resultados"
+                name="results"
+                value={formData.results}
+                onChange={handleChange}
+                placeholder="Resultados del examen médico..."
+              />
+            </div>
+
+            {/* Notas (campo completo) */}
+            <div className="mt-6">
+              <TextArea
+                label="📝 Notas"
                 name="notes"
                 value={formData.notes}
                 onChange={handleChange}
+                placeholder="Notas adicionales sobre el examen..."
               />
             </div>
           </CardContent>

@@ -1,4 +1,4 @@
-// DTO para MedicalExam
+// DTO para MedicalExam con datos relacionados
 class MedicalExamDto {
     constructor(exam) {
         this.id = exam.id;
@@ -10,6 +10,47 @@ class MedicalExamDto {
         this.notes = exam.notes;
         this.createdAt = exam.created_at || exam.createdAt;
         this.updatedAt = exam.updated_at || exam.updatedAt;
+
+        // Datos del historial médico
+        if (exam.medicalRecord) {
+            this.medicalRecord = {
+                id: exam.medicalRecord.id,
+                diagnosis: exam.medicalRecord.diagnosis,
+                symptoms: exam.medicalRecord.symptoms,
+                observations: exam.medicalRecord.observations,
+                date: exam.medicalRecord.date
+            };
+
+            // Datos del paciente
+            if (exam.medicalRecord.patient) {
+                this.patient = {
+                    id: exam.medicalRecord.patient.id,
+                    firstName: exam.medicalRecord.patient.firstName || '',
+                    lastName: exam.medicalRecord.patient.lastName || '',
+                    fullName: `${exam.medicalRecord.patient.firstName || ''} ${exam.medicalRecord.patient.lastName || ''}`.trim(),
+                    email: exam.medicalRecord.patient.user?.email || '',
+                    phone: exam.medicalRecord.patient.phone || '',
+                    dni: exam.medicalRecord.patient.dni || ''
+                };
+            }
+
+            // Datos del doctor
+            if (exam.medicalRecord.doctor) {
+                this.doctor = {
+                    id: exam.medicalRecord.doctor.id,
+                    firstName: exam.medicalRecord.doctor.firstName || '',
+                    lastName: exam.medicalRecord.doctor.lastName || '',
+                    fullName: `${exam.medicalRecord.doctor.firstName || ''} ${exam.medicalRecord.doctor.lastName || ''}`.trim(),
+                    email: exam.medicalRecord.doctor.user?.email || '',
+                    phone: exam.medicalRecord.doctor.phone || '',
+                    specialty: exam.medicalRecord.doctor.specialty ? {
+                        id: exam.medicalRecord.doctor.specialty.id,
+                        name: exam.medicalRecord.doctor.specialty.name,
+                        description: exam.medicalRecord.doctor.specialty.description
+                    } : null
+                };
+            }
+        }
     }
 
     static forCreate(data) {

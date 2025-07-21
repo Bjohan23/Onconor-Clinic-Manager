@@ -37,9 +37,12 @@ const PrescriptionsPage = () => {
         itemsPerPage,
         filters
       );
-      setPrescriptions(response.data?.prescriptions || []);
-      setTotalPages(response.data?.pagination?.totalPages || 1);
-      setTotalItems(response.data?.pagination?.total || 0);
+      // El API devuelve directamente un array, no un objeto con paginación
+      const prescriptions = Array.isArray(response) ? response : [];
+      setPrescriptions(prescriptions);
+      // Como no hay paginación real del API, calculamos valores por defecto
+      setTotalPages(1);
+      setTotalItems(prescriptions.length);
     } catch (err) {
       setError('Error al cargar las prescripciones');
     } finally {
@@ -66,15 +69,82 @@ const PrescriptionsPage = () => {
   };
 
   const columns = [
-    { key: 'id', title: 'ID' },
-    { key: 'patientId', title: 'Paciente' },
-    { key: 'doctorId', title: 'Médico' },
-    { key: 'medication', title: 'Medicamento' },
-    { key: 'dosage', title: 'Dosis' },
-    { key: 'created_at', title: 'Fecha Registro' },
+    { 
+      key: 'id', 
+      title: 'ID',
+      render: (value) => `#${value}`
+    },
+    { 
+      key: 'patient', 
+      title: '👤 Paciente',
+      render: (value, prescription) => (
+        <div>
+          <div className="font-semibold" style={{ color: colors.text.primary }}>
+            {prescription.patient?.fullName || `Tratamiento #${prescription.treatmentId}`}
+          </div>
+          {prescription.patient?.dni && (
+            <div className="text-xs" style={{ color: colors.text.secondary }}>
+              DNI: {prescription.patient.dni}
+            </div>
+          )}
+        </div>
+      )
+    },
+    { 
+      key: 'doctor', 
+      title: '👨‍⚕️ Médico',
+      render: (value, prescription) => (
+        <div>
+          <div className="font-semibold" style={{ color: colors.text.primary }}>
+            {prescription.doctor?.fullName || 'No asignado'}
+          </div>
+          {prescription.doctor?.specialty?.name && (
+            <div className="text-xs" style={{ color: colors.text.secondary }}>
+              {prescription.doctor.specialty.name}
+            </div>
+          )}
+        </div>
+      )
+    },
+    { 
+      key: 'medication', 
+      title: '💊 Medicamento',
+      render: (value) => (
+        <div className="font-semibold" style={{ color: colors.text.primary }}>
+          {value}
+        </div>
+      )
+    },
+    { 
+      key: 'dosage', 
+      title: '📏 Dosis',
+      render: (value) => (
+        <div className="text-sm" style={{ color: colors.text.primary }}>
+          {value}
+        </div>
+      )
+    },
+    { 
+      key: 'frequency', 
+      title: '⏰ Frecuencia',
+      render: (value) => (
+        <div className="max-w-xs truncate" title={value}>
+          {value || 'No especificada'}
+        </div>
+      )
+    },
+    { 
+      key: 'duration', 
+      title: '📅 Duración',
+      render: (value) => (
+        <div className="text-sm" style={{ color: colors.text.primary }}>
+          {value || 'No especificada'}
+        </div>
+      )
+    },
     {
       key: 'actions',
-      title: 'Acciones',
+      title: '🔧 Acciones',
       render: (_, prescription) => (
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => navigate(`/prescriptions/edit/${prescription.id}`)}>

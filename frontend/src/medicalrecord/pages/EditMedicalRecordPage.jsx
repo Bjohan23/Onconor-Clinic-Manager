@@ -25,6 +25,7 @@ const EditMedicalRecordPage = () => {
     doctorId: '',
     diagnosis: '',
     notes: '',
+    symptoms: '',
   });
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
@@ -69,6 +70,7 @@ const EditMedicalRecordPage = () => {
           doctorId: response.doctorId || '',
           diagnosis: response.diagnosis || '',
           notes: response.observations || '', // El API usa 'observations' en lugar de 'notes'
+          symptoms: response.symptoms || ''
         });
       } else {
         toast.error('Error al cargar el historial');
@@ -104,15 +106,26 @@ const EditMedicalRecordPage = () => {
     if (!validateForm()) return;
     setLoading(true);
     try {
-      const response = await medicalRecordService.update(id, formData);
-      if (response.success) {
+      // Mapear los datos del formulario al formato que espera el API
+      const requestData = {
+        patientId: formData.patientId,
+        doctorId: formData.doctorId,
+        diagnosis: formData.diagnosis,
+        symptoms: formData.symptoms,
+        observations: formData.notes, // El API espera 'observations', no 'notes'
+      };
+      
+      const response = await medicalRecordService.update(id, requestData);
+      // El API devuelve directamente el objeto actualizado si es exitoso
+      if (response && response.id) {
         toast.success('Historial médico actualizado exitosamente');
         navigate('/medical-records');
       } else {
-        setErrors({ submit: response.message || 'Error al actualizar el historial médico' });
+        setErrors({ submit: response?.message || 'Error al actualizar el historial médico' });
       }
     } catch (err) {
-      setErrors({ submit: 'Error de conexión. Inténtalo nuevamente.' });
+      console.error('Error updating medical record:', err);
+      setErrors({ submit: err?.message || 'Error de conexión. Inténtalo nuevamente.' });
     } finally {
       setLoading(false);
     }
@@ -224,10 +237,20 @@ const EditMedicalRecordPage = () => {
                 error={errors.diagnosis}
               />
               <TextArea
+                label="Síntomas"
+                name="symptoms"
+                value={formData.symptoms}
+                onChange={handleChange}
+                placeholder="Describe los síntomas del paciente..."
+              />
+            </div>
+            <div className="mt-6">
+              <TextArea
                 label="Observaciones"
                 name="notes"
                 value={formData.notes}
                 onChange={handleChange}
+                placeholder="Observaciones médicas adicionales..."
               />
             </div>
           </CardContent>

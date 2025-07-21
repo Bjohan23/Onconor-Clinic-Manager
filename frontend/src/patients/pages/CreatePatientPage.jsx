@@ -117,6 +117,8 @@ const CreatePatientPage = () => {
         dni: formData.dni.trim(),
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
+        dateOfBirth: formData.dateOfBirth, // Campo requerido que faltaba
+        gender: formData.gender, // Campo requerido que faltaba
         phone: formData.phone.replace(/\s/g, ''), // Quitar espacios
         address: formData.address.trim(),
         emergencyContact: formData.emergencyContact.trim(),

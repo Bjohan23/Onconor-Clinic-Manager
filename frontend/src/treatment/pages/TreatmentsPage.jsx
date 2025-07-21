@@ -37,9 +37,12 @@ const TreatmentsPage = () => {
         itemsPerPage,
         filters
       );
-      setTreatments(response.data?.treatments || []);
-      setTotalPages(response.data?.pagination?.totalPages || 1);
-      setTotalItems(response.data?.pagination?.total || 0);
+      // El API devuelve directamente un array, no un objeto con paginación
+      const treatments = Array.isArray(response) ? response : [];
+      setTreatments(treatments);
+      // Como no hay paginación real del API, calculamos valores por defecto
+      setTotalPages(1);
+      setTotalItems(treatments.length);
     } catch (err) {
       setError('Error al cargar los tratamientos');
     } finally {
@@ -66,15 +69,90 @@ const TreatmentsPage = () => {
   };
 
   const columns = [
-    { key: 'id', title: 'ID' },
-    { key: 'patientId', title: 'Paciente' },
-    { key: 'doctorId', title: 'Médico' },
-    { key: 'treatmentType', title: 'Tipo de Tratamiento' },
-    { key: 'startDate', title: 'Fecha Inicio' },
-    { key: 'endDate', title: 'Fecha Fin' },
+    { 
+      key: 'id', 
+      title: 'ID',
+      render: (value) => `#${value}`
+    },
+    { 
+      key: 'patient', 
+      title: '👤 Paciente',
+      render: (value, treatment) => (
+        <div>
+          <div className="font-semibold" style={{ color: colors.text.primary }}>
+            {treatment.patient?.fullName || `Historial #${treatment.medicalRecordId}`}
+          </div>
+          {treatment.patient?.dni && (
+            <div className="text-xs" style={{ color: colors.text.secondary }}>
+              DNI: {treatment.patient.dni}
+            </div>
+          )}
+        </div>
+      )
+    },
+    { 
+      key: 'doctor', 
+      title: '👨‍⚕️ Médico',
+      render: (value, treatment) => (
+        <div>
+          <div className="font-semibold" style={{ color: colors.text.primary }}>
+            {treatment.doctor?.fullName || 'No asignado'}
+          </div>
+          {treatment.doctor?.specialty?.name && (
+            <div className="text-xs" style={{ color: colors.text.secondary }}>
+              {treatment.doctor.specialty.name}
+            </div>
+          )}
+        </div>
+      )
+    },
+    { 
+      key: 'description', 
+      title: '🏥 Descripción',
+      render: (value) => (
+        <div className="max-w-xs truncate" title={value}>
+          {value}
+        </div>
+      )
+    },
+    { 
+      key: 'medications', 
+      title: '💊 Medicamentos',
+      render: (value) => (
+        <div className="max-w-xs truncate" title={value}>
+          {value || 'No especificado'}
+        </div>
+      )
+    },
+    { 
+      key: 'startDate', 
+      title: '📅 Fecha Inicio',
+      render: (value) => {
+        if (!value) return 'No especificada';
+        const date = new Date(value);
+        return date.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+      }
+    },
+    { 
+      key: 'endDate', 
+      title: '📅 Fecha Fin',
+      render: (value) => {
+        if (!value) return 'No especificada';
+        const date = new Date(value);
+        return date.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+      }
+    },
     {
       key: 'actions',
-      title: 'Acciones',
+      title: '🔧 Acciones',
       render: (_, treatment) => (
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => navigate(`/treatments/edit/${treatment.id}`)}>

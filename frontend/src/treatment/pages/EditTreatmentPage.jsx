@@ -21,12 +21,12 @@ const EditTreatmentPage = () => {
   const [errors, setErrors] = useState({});
   const [treatment, setTreatment] = useState(null);
   const [formData, setFormData] = useState({
-    patientId: '',
-    doctorId: '',
-    treatmentType: '',
+    medicalRecordId: '',
+    description: '',
+    medications: '',
+    instructions: '',
     startDate: '',
     endDate: '',
-    notes: '',
   });
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
@@ -37,10 +37,15 @@ const EditTreatmentPage = () => {
 
   useEffect(() => {
     async function fetchOptions() {
-      const pRes = await patientService.getActivePatients();
-      const dRes = await doctorService.getActiveDoctors();
-      setPatients(pRes.data?.patients || []);
-      setDoctors(dRes.data?.doctors || []);
+      try {
+        const pRes = await patientService.getActivePatients();
+        const dRes = await doctorService.getActiveDoctors();
+        // El API de pacientes activos devuelve una estructura diferente
+        setPatients(pRes?.data?.patients || []);
+        setDoctors(Array.isArray(dRes) ? dRes : (dRes?.doctors || []));
+      } catch (error) {
+        console.error('Error loading options:', error);
+      }
     }
     fetchOptions();
   }, []);
@@ -49,22 +54,23 @@ const EditTreatmentPage = () => {
     try {
       setLoadingTreatment(true);
       const response = await treatmentService.getById(id);
-      if (response.success) {
-        const data = response.data?.treatment;
-        setTreatment(data);
+      // El API devuelve directamente el objeto del tratamiento
+      if (response && response.id) {
+        setTreatment(response);
         setFormData({
-          patientId: data.patientId || '',
-          doctorId: data.doctorId || '',
-          treatmentType: data.treatmentType || '',
-          startDate: data.startDate || '',
-          endDate: data.endDate || '',
-          notes: data.notes || '',
+          medicalRecordId: response.medicalRecordId || '',
+          description: response.description || '',
+          medications: response.medications || '',
+          instructions: response.instructions || '',
+          startDate: response.startDate ? response.startDate.split('T')[0] : '', // Formato YYYY-MM-DD
+          endDate: response.endDate ? response.endDate.split('T')[0] : '',
         });
       } else {
-        toast.error(response.message || 'Error al cargar el tratamiento');
+        toast.error('Error al cargar el tratamiento');
         navigate('/treatments');
       }
     } catch (err) {
+      console.error('Error fetching treatment:', err);
       toast.error('Error de conexión al cargar el tratamiento');
       navigate('/treatments');
     } finally {
@@ -82,9 +88,9 @@ const EditTreatmentPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.patientId) newErrors.patientId = 'El paciente es obligatorio';
-    if (!formData.doctorId) newErrors.doctorId = 'El médico es obligatorio';
-    if (!formData.treatmentType.trim()) newErrors.treatmentType = 'El tipo de tratamiento es obligatorio';
+    if (!formData.medicalRecordId) newErrors.medicalRecordId = 'El historial médico es obligatorio';
+    if (!formData.description.trim()) newErrors.description = 'La descripción es obligatoria';
+    if (!formData.medications.trim()) newErrors.medications = 'Los medicamentos son obligatorios';
     if (!formData.startDate) newErrors.startDate = 'La fecha de inicio es obligatoria';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -96,14 +102,16 @@ const EditTreatmentPage = () => {
     setLoading(true);
     try {
       const response = await treatmentService.update(id, formData);
-      if (response.success) {
+      // El API devuelve directamente el objeto actualizado si es exitoso
+      if (response && response.id) {
         toast.success('Tratamiento actualizado exitosamente');
         navigate('/treatments');
       } else {
-        setErrors({ submit: response.message || 'Error al actualizar el tratamiento' });
+        setErrors({ submit: response?.message || 'Error al actualizar el tratamiento' });
       }
     } catch (err) {
-      setErrors({ submit: 'Error de conexión. Inténtalo nuevamente.' });
+      console.error('Error updating treatment:', err);
+      setErrors({ submit: err?.message || 'Error de conexión. Inténtalo nuevamente.' });
     } finally {
       setLoading(false);
     }
@@ -169,41 +177,93 @@ const EditTreatmentPage = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <select
-                name="patientId"
-                value={formData.patientId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona un paciente</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>{p.fullName || `${p.firstName} ${p.lastName}`}</option>
-                ))}
-              </select>
-              <select
-                name="doctorId"
-                value={formData.doctorId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona un médico</option>
-                {doctors.map((d) => (
-                  <option key={d.id} value={d.id}>{d.fullName || `${d.firstName} ${d.lastName}`}</option>
-                ))}
-              </select>
+              {/* Información del paciente (solo lectura) */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  👤 Paciente
+                </label>
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: colors.background.secondary, 
+                  borderColor: colors.border.light 
+                }}>
+                  <div className="font-semibold" style={{ color: colors.text.primary }}>
+                    {treatment?.patient?.fullName || `Historial #${formData.medicalRecordId}`}
+                  </div>
+                  {treatment?.patient?.dni && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      DNI: {treatment.patient.dni}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Información del doctor (solo lectura) */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  👨‍⚕️ Médico
+                </label>
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: colors.background.secondary, 
+                  borderColor: colors.border.light 
+                }}>
+                  <div className="font-semibold" style={{ color: colors.text.primary }}>
+                    {treatment?.doctor?.fullName || 'No asignado'}
+                  </div>
+                  {treatment?.doctor?.specialty?.name && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      {treatment.doctor.specialty.name}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Historial médico ID (solo lectura) */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  📋 Historial Médico
+                </label>
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: colors.background.secondary, 
+                  borderColor: colors.border.light 
+                }}>
+                  <div className="font-semibold" style={{ color: colors.text.primary }}>
+                    Historial #{formData.medicalRecordId}
+                  </div>
+                  {treatment?.medicalRecord?.diagnosis && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      {treatment.medicalRecord.diagnosis}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Descripción (editable) */}
               <Input
-                label="Tipo de Tratamiento"
-                name="treatmentType"
+                label="🏥 Descripción"
+                name="description"
                 type="text"
                 required
-                value={formData.treatmentType}
+                value={formData.description}
                 onChange={handleChange}
-                error={errors.treatmentType}
+                error={errors.description}
+                placeholder="Describe el tratamiento..."
               />
+
+              {/* Medicamentos (editable) */}
               <Input
-                label="Fecha de Inicio"
+                label="💊 Medicamentos"
+                name="medications"
+                type="text"
+                required
+                value={formData.medications}
+                onChange={handleChange}
+                error={errors.medications}
+                placeholder="Especifica los medicamentos..."
+              />
+
+              {/* Fecha de Inicio */}
+              <Input
+                label="📅 Fecha de Inicio"
                 name="startDate"
                 type="date"
                 required
@@ -211,18 +271,25 @@ const EditTreatmentPage = () => {
                 onChange={handleChange}
                 error={errors.startDate}
               />
+
+              {/* Fecha de Fin */}
               <Input
-                label="Fecha de Fin"
+                label="📅 Fecha de Fin"
                 name="endDate"
                 type="date"
                 value={formData.endDate}
                 onChange={handleChange}
               />
+            </div>
+
+            {/* Instrucciones (campo completo) */}
+            <div className="mt-6">
               <TextArea
-                label="Notas"
-                name="notes"
-                value={formData.notes}
+                label="📝 Instrucciones"
+                name="instructions"
+                value={formData.instructions}
                 onChange={handleChange}
+                placeholder="Instrucciones detalladas del tratamiento..."
               />
             </div>
           </CardContent>

@@ -21,11 +21,12 @@ const EditPrescriptionPage = () => {
   const [errors, setErrors] = useState({});
   const [prescription, setPrescription] = useState(null);
   const [formData, setFormData] = useState({
-    patientId: '',
-    doctorId: '',
+    treatmentId: '',
     medication: '',
     dosage: '',
-    notes: '',
+    frequency: '',
+    duration: '',
+    instructions: '',
   });
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
@@ -48,21 +49,23 @@ const EditPrescriptionPage = () => {
     try {
       setLoadingPrescription(true);
       const response = await prescriptionService.getById(id);
-      if (response.success) {
-        const data = response.data?.prescription;
-        setPrescription(data);
+      // El API devuelve directamente el objeto de prescripción
+      if (response && response.id) {
+        setPrescription(response);
         setFormData({
-          patientId: data.patientId || '',
-          doctorId: data.doctorId || '',
-          medication: data.medication || '',
-          dosage: data.dosage || '',
-          notes: data.notes || '',
+          treatmentId: response.treatmentId || '',
+          medication: response.medication || '',
+          dosage: response.dosage || '',
+          frequency: response.frequency || '',
+          duration: response.duration || '',
+          instructions: response.instructions || '',
         });
       } else {
-        toast.error(response.message || 'Error al cargar la prescripción');
+        toast.error('Error al cargar la prescripción');
         navigate('/prescriptions');
       }
     } catch (err) {
+      console.error('Error fetching prescription:', err);
       toast.error('Error de conexión al cargar la prescripción');
       navigate('/prescriptions');
     } finally {
@@ -80,10 +83,10 @@ const EditPrescriptionPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.patientId) newErrors.patientId = 'El paciente es obligatorio';
-    if (!formData.doctorId) newErrors.doctorId = 'El médico es obligatorio';
+    if (!formData.treatmentId) newErrors.treatmentId = 'El tratamiento es obligatorio';
     if (!formData.medication.trim()) newErrors.medication = 'El medicamento es obligatorio';
     if (!formData.dosage.trim()) newErrors.dosage = 'La dosis es obligatoria';
+    if (!formData.frequency.trim()) newErrors.frequency = 'La frecuencia es obligatoria';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -94,14 +97,16 @@ const EditPrescriptionPage = () => {
     setLoading(true);
     try {
       const response = await prescriptionService.update(id, formData);
-      if (response.success) {
+      // El API devuelve directamente el objeto actualizado si es exitoso
+      if (response && response.id) {
         toast.success('Prescripción actualizada exitosamente');
         navigate('/prescriptions');
       } else {
-        setErrors({ submit: response.message || 'Error al actualizar la prescripción' });
+        setErrors({ submit: response?.message || 'Error al actualizar la prescripción' });
       }
     } catch (err) {
-      setErrors({ submit: 'Error de conexión. Inténtalo nuevamente.' });
+      console.error('Error updating prescription:', err);
+      setErrors({ submit: err?.message || 'Error de conexión. Inténtalo nuevamente.' });
     } finally {
       setLoading(false);
     }
@@ -167,53 +172,121 @@ const EditPrescriptionPage = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <select
-                name="patientId"
-                value={formData.patientId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona un paciente</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>{p.fullName || `${p.firstName} ${p.lastName}`}</option>
-                ))}
-              </select>
-              <select
-                name="doctorId"
-                value={formData.doctorId}
-                onChange={handleChange}
-                required
-                className="input-modern"
-              >
-                <option value="">Selecciona un médico</option>
-                {doctors.map((d) => (
-                  <option key={d.id} value={d.id}>{d.fullName || `${d.firstName} ${d.lastName}`}</option>
-                ))}
-              </select>
+              {/* Información del paciente (solo lectura) */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  👤 Paciente
+                </label>
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: colors.background.secondary, 
+                  borderColor: colors.border.light 
+                }}>
+                  <div className="font-semibold" style={{ color: colors.text.primary }}>
+                    {prescription?.patient?.fullName || `Tratamiento #${formData.treatmentId}`}
+                  </div>
+                  {prescription?.patient?.dni && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      DNI: {prescription.patient.dni}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Información del doctor (solo lectura) */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  👨‍⚕️ Médico
+                </label>
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: colors.background.secondary, 
+                  borderColor: colors.border.light 
+                }}>
+                  <div className="font-semibold" style={{ color: colors.text.primary }}>
+                    {prescription?.doctor?.fullName || 'No asignado'}
+                  </div>
+                  {prescription?.doctor?.specialty?.name && (
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>
+                      {prescription.doctor.specialty.name}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Información del tratamiento (solo lectura) */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  🏥 Tratamiento
+                </label>
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: colors.background.secondary, 
+                  borderColor: colors.border.light 
+                }}>
+                  <div className="font-semibold" style={{ color: colors.text.primary }}>
+                    Tratamiento #{formData.treatmentId}
+                  </div>
+                  {prescription?.treatment?.description && (
+                    <div className="text-sm mt-1" style={{ color: colors.text.secondary }}>
+                      {prescription.treatment.description}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Medicamento (editable) */}
               <Input
-                label="Medicamento"
+                label="💊 Medicamento"
                 name="medication"
                 type="text"
                 required
                 value={formData.medication}
                 onChange={handleChange}
                 error={errors.medication}
+                placeholder="Nombre del medicamento..."
               />
+
+              {/* Dosis (editable) */}
               <Input
-                label="Dosis"
+                label="📏 Dosis"
                 name="dosage"
                 type="text"
                 required
                 value={formData.dosage}
                 onChange={handleChange}
                 error={errors.dosage}
+                placeholder="ej: 10mg, 5ml..."
               />
-              <TextArea
-                label="Notas"
-                name="notes"
-                value={formData.notes}
+
+              {/* Frecuencia (editable) */}
+              <Input
+                label="⏰ Frecuencia"
+                name="frequency"
+                type="text"
+                required
+                value={formData.frequency}
                 onChange={handleChange}
+                error={errors.frequency}
+                placeholder="ej: Una vez al día, cada 8 horas..."
+              />
+
+              {/* Duración (editable) */}
+              <Input
+                label="📅 Duración"
+                name="duration"
+                type="text"
+                value={formData.duration}
+                onChange={handleChange}
+                placeholder="ej: 7 días, 3 semanas..."
+              />
+            </div>
+
+            {/* Instrucciones (campo completo) */}
+            <div className="mt-6">
+              <TextArea
+                label="📝 Instrucciones"
+                name="instructions"
+                value={formData.instructions}
+                onChange={handleChange}
+                placeholder="Instrucciones detalladas de cómo tomar el medicamento..."
               />
             </div>
           </CardContent>
