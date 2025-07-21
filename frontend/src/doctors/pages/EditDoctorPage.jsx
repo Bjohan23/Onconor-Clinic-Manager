@@ -51,7 +51,7 @@ const EditDoctorPage = () => {
       const response = await doctorService.getDoctorById(id)
       
       if (response.success) {
-        const doctorData = response.data
+        const doctorData = response.data?.doctor
         setDoctor(doctorData)
         
         setFormData({
@@ -63,7 +63,7 @@ const EditDoctorPage = () => {
           phone: doctorData.phone || '',
           address: doctorData.address || '',
           specialtyId: doctorData.specialtyId || '',
-          licenseNumber: doctorData.licenseNumber || '',
+          licenseNumber: doctorData.medicalLicense || doctorData.licenseNumber || '',
           university: doctorData.university || '',
           graduationYear: doctorData.graduationYear || '',
           experience: doctorData.experience || '',

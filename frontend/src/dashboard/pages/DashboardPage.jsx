@@ -1,7 +1,53 @@
 import { useTheme } from '../../shared/contexts/ThemeContext'
+import { useEffect, useState } from 'react'
+import { patientService } from '../../patients/services/patientService'
+import appointmentService from '../../services/appointmentService'
+import { LoadingSpinner } from '../../shared/components/LoadingSpinner'
 
 const DashboardPage = () => {
   const { colors } = useTheme()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [stats, setStats] = useState({
+    totalPatients: 0,
+    totalAppointments: 0,
+    todayAppointments: 0,
+    pendingAppointments: 0,
+    completedAppointments: 0
+  })
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const [patientRes, appointmentRes] = await Promise.all([
+          patientService.getPatientStats(),
+          appointmentService.getAppointmentStats()
+        ])
+        setStats({
+          totalPatients: patientRes.data?.stats?.total || 0,
+          totalAppointments: appointmentRes.data?.stats?.total || 0,
+          todayAppointments: appointmentRes.data?.stats?.today || 0,
+          pendingAppointments: appointmentRes.data?.stats?.pending || 0,
+          completedAppointments: appointmentRes.data?.stats?.completed || 0
+        })
+      } catch (err) {
+        setError('Error al cargar estadísticas del dashboard')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchStats()
+  }, [])
+
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-96"><LoadingSpinner size="lg" text="Cargando dashboard..." center /></div>
+  }
+
+  if (error) {
+    return <div className="text-center text-red-400 font-medium py-8">{error}</div>
+  }
 
   return (
     <div>
@@ -27,7 +73,7 @@ const DashboardPage = () => {
                 Total Pacientes
               </p>
               <p className="text-2xl font-semibold" style={{ color: colors.text.primary }}>
-                1,234
+                {stats.totalPatients}
               </p>
             </div>
           </div>
@@ -50,7 +96,7 @@ const DashboardPage = () => {
                 Citas Hoy
               </p>
               <p className="text-2xl font-semibold" style={{ color: colors.text.primary }}>
-                24
+                {stats.todayAppointments}
               </p>
             </div>
           </div>
@@ -73,7 +119,7 @@ const DashboardPage = () => {
                 Pendientes
               </p>
               <p className="text-2xl font-semibold" style={{ color: colors.text.primary }}>
-                8
+                {stats.pendingAppointments}
               </p>
             </div>
           </div>
@@ -96,7 +142,7 @@ const DashboardPage = () => {
                 Completadas
               </p>
               <p className="text-2xl font-semibold" style={{ color: colors.text.primary }}>
-                16
+                {stats.completedAppointments}
               </p>
             </div>
           </div>

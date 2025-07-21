@@ -4,6 +4,9 @@ import { specialtyService } from '../../specialties/services/specialtyService';
 import { patientService } from '../../patients/services/patientService';
 import { doctorService } from '../../doctors/services/doctorService';
 import appointmentService from '../../services/appointmentService';
+import { Bar, Pie, Line } from 'react-chartjs-2';
+import { Chart, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement } from 'chart.js';
+Chart.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement);
 
 const ReportsPage = () => {
     const { colors, isDarkMode } = useTheme();
@@ -16,6 +19,7 @@ const ReportsPage = () => {
     });
     const [error, setError] = useState(null);
     const [selectedPeriod, setSelectedPeriod] = useState('month');
+    const [showCharts, setShowCharts] = useState(false);
 
     useEffect(() => {
         loadAllStats();
@@ -75,6 +79,42 @@ const ReportsPage = () => {
         };
         return labels[period] || 'Este mes';
     };
+
+    // Acciones rápidas
+    const handleExportPDF = async () => {
+        try {
+            const res = await appointmentService.generateAppointmentReport({}, 'pdf');
+            const blob = new Blob([res.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'reporte_citas.pdf';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            alert('Error al exportar PDF');
+        }
+    };
+    const handleExportExcel = async () => {
+        try {
+            const res = await appointmentService.generateAppointmentReport({}, 'excel');
+            const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'reporte_citas.xlsx';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            alert('Error al exportar Excel');
+        }
+    };
+    const handleShare = () => {
+        navigator.clipboard.writeText(window.location.href);
+        alert('¡Enlace copiado al portapapeles!');
+    };
+    const handleShowCharts = () => setShowCharts(true);
+    const handleCloseCharts = () => setShowCharts(false);
 
     return (
         <div className="relative min-h-full">
@@ -357,7 +397,9 @@ const ReportsPage = () => {
                                             <div className="flex justify-between items-center mb-2">
                                                 <span className="text-white/80">Ocupación de Especialidades</span>
                                                 <span className="text-blue-400 font-semibold">
-                                                    {stats.specialties?.withDoctors || 0}/{stats.specialties?.total || 0}
+                                                    {Array.isArray(stats.specialties?.withDoctors)
+                                                        ? `${stats.specialties.withDoctors.length}/${stats.specialties?.total || 0}`
+                                                        : `0/${stats.specialties?.total || 0}`}
                                                 </span>
                                             </div>
                                             <div className="w-full bg-white/10 rounded-full h-2">
@@ -365,11 +407,26 @@ const ReportsPage = () => {
                                                     className="bg-gradient-primary h-2 rounded-full transition-all duration-1000"
                                                     style={{ 
                                                         width: `${stats.specialties?.total > 0 
-                                                            ? ((stats.specialties?.withDoctors || 0) / stats.specialties.total * 100) 
+                                                            ? (Array.isArray(stats.specialties?.withDoctors)
+                                                                ? (stats.specialties.withDoctors.length / stats.specialties.total * 100)
+                                                                : 0)
                                                             : 0}%` 
                                                     }}
                                                 ></div>
                                             </div>
+                                            {/* Lista de especialidades con médicos */}
+                                            {Array.isArray(stats.specialties?.withDoctors) && stats.specialties.withDoctors.length > 0 ? (
+                                                <ul className="mt-2 space-y-1">
+                                                    {stats.specialties.withDoctors.map((s) => (
+                                                        <li key={s.id} className="text-white/90 text-sm flex items-center gap-2">
+                                                            <span className="font-semibold">{s.name}</span>
+                                                            <span className="text-blue-400">({s.doctorCount} médicos)</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <p className="text-white/60 mt-2 text-sm">Ninguna especialidad con médicos asignados</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -385,20 +442,18 @@ const ReportsPage = () => {
                                 </h3>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                    <button className="btn-modern flex items-center justify-center gap-2 p-4">
+                                    <button className="btn-modern flex items-center justify-center gap-2 p-4" onClick={handleExportPDF}>
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
                                         Exportar PDF
                                     </button>
-                                    
-                                    <button className="btn-modern flex items-center justify-center gap-2 p-4">
+                                    <button className="btn-modern flex items-center justify-center gap-2 p-4" onClick={handleShowCharts}>
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                         </svg>
-                                        Reporte Detallado
+                                        Ver Gráficos
                                     </button>
-                                    
                                     <button 
                                         onClick={loadAllStats}
                                         disabled={loading}
@@ -409,8 +464,7 @@ const ReportsPage = () => {
                                         </svg>
                                         Actualizar
                                     </button>
-                                    
-                                    <button className="btn-modern flex items-center justify-center gap-2 p-4">
+                                    <button className="btn-modern flex items-center justify-center gap-2 p-4" onClick={handleShare}>
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                                         </svg>
@@ -422,6 +476,91 @@ const ReportsPage = () => {
                     )}
                 </div>
             </div>
+
+            {/* Modal de gráficos */}
+            {showCharts && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center"
+                    onClick={handleCloseCharts}
+                >
+                    <div
+                        className="bg-white rounded-2xl shadow-xl max-w-3xl w-full p-8 relative"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <button
+                            onClick={handleCloseCharts}
+                            className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl z-50 cursor-pointer"
+                            aria-label="Cerrar"
+                        >
+                            &times;
+                        </button>
+                        <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">Reporte Detallado</h2>
+                        <div className="space-y-8">
+                            {/* Gráfico de barras: Citas por estado */}
+                            {stats.appointments?.statusDistribution && (
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-2">Citas por Estado</h3>
+                                    <Bar
+                                        data={{
+                                            labels: stats.appointments.statusDistribution.map(s => s.display),
+                                            datasets: [{
+                                                label: 'Cantidad',
+                                                data: stats.appointments.statusDistribution.map(s => s.count),
+                                                backgroundColor: ['#2563eb', '#059669', '#f59e42', '#10b981', '#ef4444', '#6b7280'],
+                                            }]
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            plugins: { legend: { display: false } }
+                                        }}
+                                    />
+                                </div>
+                            )}
+                            {/* Gráfico de pastel: Ocupación de especialidades */}
+                            {Array.isArray(stats.specialties?.withDoctors) && stats.specialties.withDoctors.length > 0 && (
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-2">Ocupación de Especialidades</h3>
+                                    <Pie
+                                        data={{
+                                            labels: stats.specialties.withDoctors.map(s => s.name),
+                                            datasets: [{
+                                                data: stats.specialties.withDoctors.map(s => s.doctorCount),
+                                                backgroundColor: ['#6366f1', '#f59e42', '#10b981', '#ef4444', '#a21caf', '#2563eb', '#fbbf24'],
+                                            }]
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            plugins: { legend: { position: 'bottom' } }
+                                        }}
+                                    />
+                                </div>
+                            )}
+                            {/* Gráfico de líneas: Pacientes por mes (si hay datos) */}
+                            {stats.patients?.byMonth && stats.patients.byMonth.length > 0 && (
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-2">Pacientes Registrados por Mes</h3>
+                                    <Line
+                                        data={{
+                                            labels: stats.patients.byMonth.map(m => m.month),
+                                            datasets: [{
+                                                label: 'Pacientes',
+                                                data: stats.patients.byMonth.map(m => m.count),
+                                                borderColor: '#6366f1',
+                                                backgroundColor: 'rgba(99,102,241,0.2)',
+                                                tension: 0.4
+                                            }]
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            plugins: { legend: { display: false } }
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* CSS Animation Keyframes */}
             <style>{`

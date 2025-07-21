@@ -157,9 +157,9 @@ const SpecialtyList = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {specialties.map((specialty, index) => (
+                            {Array.isArray(specialties) && specialties.map((specialty, index) => (
                                 <tr 
-                                    key={specialty.id} 
+                                    key={specialty.id || index} 
                                     className="border-t border-white/10 hover:bg-white/5 transition-colors cursor-pointer"
                                     onClick={() => onSelectSpecialty(specialty)}
                                 >
@@ -172,10 +172,10 @@ const SpecialtyList = ({
                                             </div>
                                             <div>
                                                 <p className="font-semibold text-white">
-                                                    {specialty.name}
+                                                    {specialty.name || 'Sin nombre'}
                                                 </p>
                                                 <p className="text-sm text-white/60">
-                                                    ID: {specialty.id}
+                                                    ID: {specialty.id || 'N/A'}
                                                 </p>
                                             </div>
                                         </div>
@@ -198,7 +198,7 @@ const SpecialtyList = ({
                                     </td>
                                     <td className="px-6 py-4">
                                         <p className="text-white/70 text-sm">
-                                            {formatDate(specialty.created_at)}
+                                            {formatDate(specialty.created_at || specialty.createdAt)}
                                         </p>
                                     </td>
                                     <td className="px-6 py-4">
@@ -251,7 +251,7 @@ const SpecialtyList = ({
                     </table>
 
                     {/* Empty State */}
-                    {specialties.length === 0 && (
+                    {(!Array.isArray(specialties) || specialties.length === 0) && (
                         <div className="text-center py-12">
                             <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-600 rounded-full mx-auto mb-4 flex items-center justify-center opacity-50">
                                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -49,7 +49,7 @@ const EditMedicalExamPage = () => {
       setLoadingExam(true);
       const response = await medicalExamService.getById(id);
       if (response.success) {
-        const data = response.data;
+        const data = response.data?.medicalExam;
         setExam(data);
         setFormData({
           patientId: data.patientId || '',

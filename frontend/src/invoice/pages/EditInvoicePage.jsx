@@ -34,7 +34,7 @@ const EditInvoicePage = () => {
       setLoadingInvoice(true);
       const response = await invoiceService.getById(id);
       if (response.success) {
-        const data = response.data;
+        const data = response.data?.invoice;
         setInvoice(data);
         setFormData({
           patientId: data.patientId || '',

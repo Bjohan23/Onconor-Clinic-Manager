@@ -46,11 +46,11 @@ const ModernAppointments = () => {
                 pagination.limit
             );
             
-            setAppointments(result.appointments || []);
+            setAppointments(result.data?.appointments || []);
             setPagination(prev => ({
                 ...prev,
-                total: result.pagination?.total || 0,
-                totalPages: result.pagination?.totalPages || 0
+                total: result.data?.pagination?.total || 0,
+                totalPages: result.data?.pagination?.totalPages || 0
             }));
         } catch (err) {
             console.error('Error loading appointments:', err);
@@ -63,7 +63,7 @@ const ModernAppointments = () => {
     const loadStats = async () => {
         try {
             const statsData = await appointmentService.getAppointmentStats();
-            setStats(statsData);
+            setStats(statsData.data?.stats || null);
         } catch (err) {
             console.error('Error loading stats:', err);
         }
@@ -413,7 +413,7 @@ const ModernAppointments = () => {
             )}
 
             {/* CSS Animation Keyframes */}
-            <style jsx>{`
+            <style>{`
                 @keyframes gradient {
                     0% { background-position: 0% 50%; }
                     50% { background-position: 100% 50%; }

@@ -8,6 +8,10 @@ import { LoginPage } from './auth/pages/LoginPage'
 import { DashboardLayout } from './shared/components/DashboardLayout'
 import { lazy, Suspense } from 'react'
 import { LoadingSpinner } from './shared/components/LoadingSpinner'
+import { RegisterPage } from './auth/pages/RegisterPage'
+import { ForgotPasswordPage } from './auth/pages/ForgotPasswordPage'
+import ViewDoctorPage from './doctors/pages/ViewDoctorPage'
+import DoctorSchedulePage from './doctors/pages/DoctorSchedulePage'
 
 const Dashboard = lazy(() => import('./dashboard/pages/DashboardPage'))
 const Patients = lazy(() => import('./patients/pages/PatientsPage'))
@@ -64,6 +68,22 @@ function App() {
                   </GuestGuard>
                 } 
               />
+              <Route 
+                path="/register" 
+                element={
+                  <GuestGuard>
+                    <RegisterPage />
+                  </GuestGuard>
+                } 
+              />
+              <Route 
+                path="/forgot-password" 
+                element={
+                  <GuestGuard>
+                    <ForgotPasswordPage />
+                  </GuestGuard>
+                } 
+              />
               {/* Rutas protegidas */}
               <Route 
                 path="/*" 
@@ -80,6 +100,8 @@ function App() {
                           <Route path="/doctors" element={<Doctors />} />
                           <Route path="/doctors/create" element={<CreateDoctor />} />
                           <Route path="/doctors/edit/:id" element={<EditDoctor />} />
+                          <Route path="/doctors/view/:id" element={<ViewDoctorPage />} />
+                          <Route path="/doctors/:id/schedule" element={<DoctorSchedulePage />} />
                           <Route path="/medical-records" element={<MedicalRecords />} />
                           <Route path="/medical-records/create" element={<CreateMedicalRecord />} />
                           <Route path="/medical-records/edit/:id" element={<EditMedicalRecord />} />

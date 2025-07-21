@@ -49,7 +49,7 @@ const EditPrescriptionPage = () => {
       setLoadingPrescription(true);
       const response = await prescriptionService.getById(id);
       if (response.success) {
-        const data = response.data;
+        const data = response.data?.prescription;
         setPrescription(data);
         setFormData({
           patientId: data.patientId || '',

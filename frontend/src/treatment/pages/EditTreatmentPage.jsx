@@ -50,7 +50,7 @@ const EditTreatmentPage = () => {
       setLoadingTreatment(true);
       const response = await treatmentService.getById(id);
       if (response.success) {
-        const data = response.data;
+        const data = response.data?.treatment;
         setTreatment(data);
         setFormData({
           patientId: data.patientId || '',

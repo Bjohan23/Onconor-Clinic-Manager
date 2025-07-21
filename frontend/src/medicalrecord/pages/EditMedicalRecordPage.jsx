@@ -48,7 +48,7 @@ const EditMedicalRecordPage = () => {
       setLoadingRecord(true);
       const response = await medicalRecordService.getById(id);
       if (response.success) {
-        const data = response.data;
+        const data = response.data?.medicalRecord;
         setRecord(data);
         setFormData({
           patientId: data.patientId || '',

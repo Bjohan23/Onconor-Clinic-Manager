@@ -45,7 +45,7 @@ const EditPaymentPage = () => {
       setLoadingPayment(true);
       const response = await paymentService.getById(id);
       if (response.success) {
-        const data = response.data;
+        const data = response.data?.payment;
         setPayment(data);
         setFormData({
           invoiceId: data.invoiceId || '',

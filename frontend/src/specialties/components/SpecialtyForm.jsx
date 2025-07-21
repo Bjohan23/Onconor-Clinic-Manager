@@ -217,7 +217,7 @@ const SpecialtyForm = ({ specialty, onSave, onClose, loading }) => {
                         {getNameValidationIcon()}
                     </div>
                     {errors.name && (
-                        <p className="mt-2 text-sm text-red-400 font-medium">{errors.name}</p>
+                        <p className="mt-2 text-sm text-red-400 font-medium">{String(errors.name)}</p>
                     )}
                     {nameAvailable === false && !errors.name && (
                         <p className="mt-2 text-sm text-red-400 font-medium">Este nombre ya está en uso</p>
@@ -253,7 +253,7 @@ const SpecialtyForm = ({ specialty, onSave, onClose, loading }) => {
                         maxLength="500"
                     />
                     {errors.description && (
-                        <p className="mt-2 text-sm text-red-400 font-medium">{errors.description}</p>
+                        <p className="mt-2 text-sm text-red-400 font-medium">{String(errors.description)}</p>
                     )}
                     <p className="mt-2 text-xs text-white/50">
                         {formData.description.length}/500 caracteres
@@ -305,7 +305,7 @@ const SpecialtyForm = ({ specialty, onSave, onClose, loading }) => {
                                 </div>
                             </div>
                             <div className="ml-4 flex-1">
-                                <p className="text-sm font-medium text-red-300">{errors.submit}</p>
+                                <p className="text-sm font-medium text-red-300">{String(errors.submit)}</p>
                             </div>
                         </div>
                     </div>
