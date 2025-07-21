@@ -6,4 +6,6 @@ export const paymentService = {
   create: async (data) => apiClient.post('/payments', data),
   update: async (id, data) => apiClient.put(`/payments/${id}`, data),
   remove: async (id) => apiClient.delete(`/payments/${id}`),
+  getPaymentsWithPagination: async (page, limit, filters) =>
+    apiClient.get('/payments', { params: { page, limit, ...filters } }),
 }; 

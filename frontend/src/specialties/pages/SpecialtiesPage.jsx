@@ -303,7 +303,9 @@ const SpecialtiesPage = () => {
                                         </div>
                                     </div>
                                     <div className="ml-4 flex-1">
-                                        <p className="text-sm font-medium text-red-300">{error}</p>
+                                        <p className="text-sm font-medium text-red-300">
+                                            {typeof error === 'string' ? error : (error?.message || 'Error desconocido')}
+                                        </p>
                                     </div>
                                     <button
                                         onClick={() => setError(null)}
@@ -320,22 +322,47 @@ const SpecialtiesPage = () => {
 
                     {/* Modern Specialties List */}
                     <div className="glass rounded-3xl overflow-hidden card-hover">
-                        <SpecialtyList
-                            specialties={specialties}
-                            loading={loading}
-                            filters={filters}
-                            pagination={pagination}
-                            onFilterChange={handleFilterChange}
-                            onSearch={handleSearch}
-                            onPageChange={handlePageChange}
-                            onSelectSpecialty={handleSelectSpecialty}
-                            onActivateSpecialty={handleActivateSpecialty}
-                            onDeactivateSpecialty={handleDeactivateSpecialty}
-                            onEditSpecialty={(specialty) => {
-                                setSelectedSpecialty(specialty);
-                                setShowForm(true);
-                            }}
-                        />
+                        {/* Manejo seguro de la lista de especialidades */}
+                        {Array.isArray(specialties) && specialties.length > 0 ? (
+                            <SpecialtyList
+                                specialties={specialties.map(s => ({
+                                    id: s.id,
+                                    name: s.name,
+                                    description: s.description,
+                                    isActive: s.isActive,
+                                    doctorCount: s.doctorCount,
+                                    createdAt: s.createdAt || s.created_at,
+                                    updatedAt: s.updatedAt || s.updated_at,
+                                    flg_deleted: s.flg_deleted,
+                                    deleted_at: s.deleted_at,
+                                    user_created: s.user_created,
+                                    user_updated: s.user_updated,
+                                    user_deleted: s.user_deleted
+                                }))}
+                                loading={loading}
+                                filters={filters}
+                                pagination={pagination}
+                                onFilterChange={handleFilterChange}
+                                onSearch={handleSearch}
+                                onPageChange={handlePageChange}
+                                onSelectSpecialty={handleSelectSpecialty}
+                                onActivateSpecialty={handleActivateSpecialty}
+                                onDeactivateSpecialty={handleDeactivateSpecialty}
+                                onEditSpecialty={(specialty) => {
+                                    setSelectedSpecialty(specialty);
+                                    setShowForm(true);
+                                }}
+                            />
+                        ) : loading ? (
+                            <div className="flex items-center justify-center p-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                                <span className="ml-2">Cargando especialidades...</span>
+                            </div>
+                        ) : (
+                            <div className="p-8 text-center text-gray-500">
+                                No hay especialidades disponibles
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -365,7 +392,10 @@ const SpecialtiesPage = () => {
                     >
                         <SpecialtyForm
                             specialty={selectedSpecialty}
-                            onSave={selectedSpecialty ? handleUpdateSpecialty : handleCreateSpecialty}
+                            onSave={selectedSpecialty ? 
+                                (data) => handleUpdateSpecialty(selectedSpecialty.id, data) : 
+                                handleCreateSpecialty
+                            }
                             onClose={handleCloseForm}
                             loading={loading}
                         />
@@ -411,11 +441,20 @@ const SpecialtiesPage = () => {
             )}
 
             {/* CSS Animation Keyframes */}
-            <style jsx>{`
+            <style jsx="true">{`
                 @keyframes gradient {
                     0% { background-position: 0% 50%; }
                     50% { background-position: 100% 50%; }
                     100% { background-position: 0% 50%; }
+                }
+                
+                @keyframes float {
+                    0%, 100% { transform: translateY(0px); }
+                    50% { transform: translateY(-20px); }
+                }
+                
+                .animate-float {
+                    animation: float 6s ease-in-out infinite;
                 }
             `}</style>
         </div>
